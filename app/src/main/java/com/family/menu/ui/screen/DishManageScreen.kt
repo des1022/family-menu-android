@@ -72,7 +72,7 @@ fun DishManageScreen(navController: NavHostController) {
             AppTopBar(
                 title = if (vm.selecting) "已选 ${vm.selectedIds.size} 道" else "菜品管理",
                 onBack = {
-                    if (vm.selecting) vm.setSelecting(false) else navController.popBackStack()
+                    if (vm.selecting) vm.updateSelecting(false) else navController.popBackStack()
                 }
             )
         },
@@ -109,7 +109,7 @@ fun DishManageScreen(navController: NavHostController) {
                         Text(if (vm.selectedIds.size == dishes.size && dishes.isNotEmpty()) "取消全选" else "全选")
                     }
                 } else {
-                    TextButton(onClick = { vm.setSelecting(true) }) { Text("批量管理") }
+                    TextButton(onClick = { vm.updateSelecting(true) }) { Text("批量管理") }
                 }
             }
 
@@ -134,7 +134,7 @@ fun DishManageScreen(navController: NavHostController) {
                                 else navController.navigate(Routes.dishEdit(dish.id))
                             },
                             onLongClick = {
-                                if (!vm.selecting) vm.setSelecting(true)
+                                if (!vm.selecting) vm.updateSelecting(true)
                                 vm.toggleSelect(dish.id)
                             }
                         )

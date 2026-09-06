@@ -39,7 +39,7 @@ class DishManageViewModel(
 
     val hasSelection: Boolean get() = selectedIds.isNotEmpty()
 
-    fun setSelecting(v: Boolean) {
+    fun updateSelecting(v: Boolean) {
         selecting = v
         if (!v) selectedIds = emptySet()
     }
