@@ -94,7 +94,7 @@ object PosterGenerator {
         }
 
         // 底部：金线 + 文案 + 落款
-        val footerY = H - 260
+        val footerY = (H - 260).toFloat()
         canvas.drawRoundRect(
             RectF(W / 2f - 90f, footerY, W / 2f + 90f, footerY + 8f), 4f, 4f, gold
         )
