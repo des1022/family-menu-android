@@ -52,7 +52,15 @@ class HomeViewModel(
             }
         }
 
+    /** 今日已选道数（按 dishId distinct） */
     val todayCount: Int get() = todayRecords.value.size
+
+    /** 今日总份数（悬浮球显示用） */
+    val todayTotalNum: Int get() = todayRecords.value.sumOf { it.num }
+
+    /** 某菜今日已选份数，0 = 未选 */
+    fun numOf(dishId: Long): Int =
+        todayRecords.value.firstOrNull { it.dishId == dishId }?.num ?: 0
 
     fun selectCategory(name: String?) { selectedCategory = name }
     fun updateKeyword(value: String) { keyword = value }
@@ -63,5 +71,9 @@ class HomeViewModel(
 
     fun addToCart(dishId: Long) = viewModelScope.launch {
         recordRepository.upsert(todayDate, dishId, delta = 1)
+    }
+
+    fun decFromCart(dishId: Long) = viewModelScope.launch {
+        recordRepository.upsert(todayDate, dishId, delta = -1)
     }
 }

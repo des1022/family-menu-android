@@ -46,7 +46,7 @@ class AppContainer(applicationContext: android.content.Context) {
                     modelClass.isAssignableFrom(DishDetailViewModel::class.java) ->
                         DishDetailViewModel(dishRepository, recordRepository, imageStore) as T
                     modelClass.isAssignableFrom(OrderViewModel::class.java) ->
-                        OrderViewModel(recordRepository) as T
+                        OrderViewModel(recordRepository, dishRepository) as T
                     modelClass.isAssignableFrom(CalendarViewModel::class.java) ->
                         CalendarViewModel(recordRepository) as T
                     modelClass.isAssignableFrom(SettingsViewModel::class.java) ->

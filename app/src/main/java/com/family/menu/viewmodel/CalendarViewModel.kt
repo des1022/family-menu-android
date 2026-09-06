@@ -19,22 +19,32 @@ class CalendarViewModel(
     private val recordRepository: RecordRepository
 ) : ViewModel() {
 
+    private val monthFlow = MutableStateFlow(currentYear() to currentMonth())
+
     var year by mutableStateOf(currentYear())
         private set
     var month by mutableStateOf(currentMonth())
         private set
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val monthSummaries: StateFlow<List<DailySummary>> = MutableStateFlow(year to month)
+    val monthSummaries: StateFlow<List<DailySummary>> = monthFlow
         .flatMapLatest { (y, m) -> recordRepository.observeMonthSummaries(y, m) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun prevMonth() {
-        if (month == 1) { month = 12; year -= 1 } else month -= 1
+        val (ny, nm) = if (month == 1) Pair(year - 1, 12) else Pair(year, month - 1)
+        applyMonth(ny, nm)
     }
 
     fun nextMonth() {
-        if (month == 12) { month = 1; year += 1 } else month += 1
+        val (ny, nm) = if (month == 12) Pair(year + 1, 1) else Pair(year, month + 1)
+        applyMonth(ny, nm)
+    }
+
+    private fun applyMonth(ny: Int, nm: Int) {
+        year = ny
+        month = nm
+        monthFlow.value = ny to nm
     }
 
     private fun currentYear(): Int = Calendar.getInstance().get(Calendar.YEAR)

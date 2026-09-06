@@ -46,3 +46,42 @@ fun dateStringOf(ts: Long): String {
         c.get(Calendar.DAY_OF_MONTH)
     )
 }
+
+private data class Ymd(val y: Int, val m: Int, val d: Int)
+
+private fun parseYmd(date: String): Ymd? {
+    val p = date.split("-")
+    if (p.size != 3) return null
+    val y = p[0].toIntOrNull() ?: return null
+    val m = p[1].toIntOrNull() ?: return null
+    val d = p[2].toIntOrNull() ?: return null
+    return Ymd(y, m, d)
+}
+
+/** yyyy-MM-dd → 「9月6日」；跨年显示「2025年12月31日」 */
+fun dateCN(date: String): String {
+    val v = parseYmd(date) ?: return date
+    val nowYear = Calendar.getInstance().get(Calendar.YEAR)
+    return if (v.y == nowYear) "${v.m}月${v.d}日" else "${v.y}年${v.m}月${v.d}日"
+}
+
+/** yyyy-MM-dd → 「9月6日 · 周日」 等 */
+fun dateCNWithWeek(date: String): String {
+    val v = parseYmd(date) ?: return date
+    return "${dateCN(date)} · ${weekCN(date)}"
+}
+
+/** yyyy-MM-dd → 「2026年9月6日 星期日」（海报等正式场景） */
+fun dateCNFull(date: String): String {
+    val v = parseYmd(date) ?: return date
+    return "${v.y}年${v.m}月${v.d}日 ${weekCN(date)}"
+}
+
+fun weekCN(date: String): String {
+    val v = parseYmd(date) ?: return ""
+    val c = Calendar.getInstance().apply {
+        set(v.y, v.m - 1, v.d)
+    }
+    val names = arrayOf("周日", "周一", "周二", "周三", "周四", "周五", "周六")
+    return names[c.get(Calendar.DAY_OF_WEEK) - 1]
+}

@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Card
@@ -28,7 +29,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -46,33 +49,36 @@ import com.family.menu.FamilyMenuApp
 import com.family.menu.data.local.DishEntity
 import com.family.menu.ui.components.EmptyState
 import com.family.menu.ui.components.LocalImage
+import com.family.menu.ui.theme.PriceColor
 import com.family.menu.util.formatPrice
 import com.family.menu.viewmodel.HomeViewModel
 
 @Composable
 fun HomeScreen(
-    onOpenDish: (Long) -> Unit = {}
+    onOpenDish: (Long) -> Unit = {},
+    onOpenOrder: () -> Unit = {}
 ) {
     val app = LocalContext.current.applicationContext as FamilyMenuApp
     val vm = viewModel<HomeViewModel>(factory = app.container.viewModelFactory)
     val categories by vm.categories.collectAsStateWithLifecycle()
     val visible = vm.visibleDishes
-    val todayCount = vm.todayCount
+    val todayRecords by vm.todayRecords.collectAsStateWithLifecycle()
+    val totalNum = todayRecords.sumOf { it.num }
 
     val chips = listOf<String?>(null) + categories.map { it.name }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
-            if (todayCount > 0) {
+            if (totalNum > 0) {
                 ExtendedFloatingActionButton(
-                    onClick = { /* 阶段二：跳转 ORDER 路由 */ },
+                    onClick = onOpenOrder,
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 ) {
                     Icon(Icons.Filled.ShoppingCart, contentDescription = null)
                     Spacer(Modifier.width(6.dp))
-                    Text("点单清单 $todayCount")
+                    Text("今日点单 · $totalNum")
                 }
             }
         }
@@ -89,16 +95,6 @@ fun HomeScreen(
                     color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.weight(1f)
                 )
-                Box(
-                    modifier = Modifier.size(44.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surface),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Filled.Add,
-                        contentDescription = "头像",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
             }
 
             // 搜索
@@ -135,7 +131,7 @@ fun HomeScreen(
             // 菜品列表 / 空态
             if (visible.isEmpty()) {
                 Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                    EmptyState("还没有菜品\n先到「我的 → 设置 → 分类管理」添加菜品，并保持上架")
+                    EmptyState("还没有上架的菜品\n到「我的 → 上传菜品」添加，并保持上架")
                 }
             } else {
                 LazyColumn(
@@ -144,9 +140,16 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(visible, key = { it.id }) { dish ->
-                        DishCard(dish, onClick = { onOpenDish(dish.id) })
+                        val num = todayRecords.firstOrNull { it.dishId == dish.id }?.num ?: 0
+                        DishCard(
+                            dish = dish,
+                            num = num,
+                            onClick = { onOpenDish(dish.id) },
+                            onAdd = { vm.addToCart(dish.id) },
+                            onDec = { vm.decFromCart(dish.id) }
+                        )
                     }
-                    item { Spacer(Modifier.height(80.dp)) }
+                    item { Spacer(Modifier.height(88.dp)) }
                 }
             }
         }
@@ -154,7 +157,13 @@ fun HomeScreen(
 }
 
 @Composable
-private fun DishCard(dish: DishEntity, onClick: () -> Unit) {
+private fun DishCard(
+    dish: DishEntity,
+    num: Int,
+    onClick: () -> Unit,
+    onAdd: () -> Unit,
+    onDec: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
@@ -167,25 +176,70 @@ private fun DishCard(dish: DishEntity, onClick: () -> Unit) {
         ) {
             LocalImage(
                 path = dish.imagePath,
-                modifier = Modifier.size(96.dp).clip(RoundedCornerShape(12.dp)),
+                modifier = Modifier.size(88.dp).clip(RoundedCornerShape(12.dp)),
                 corner = 12.dp
             )
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(dish.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                Text(
+                    dish.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1
+                )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = dish.desc.ifBlank { dish.category }.take(20),
+                    text = dish.desc.ifBlank { dish.category }.take(24),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2
                 )
-                if (dish.price > 0) {
-                    Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "¥${formatPrice(dish.price)}",
+                        text = if (dish.price > 0) "¥${formatPrice(dish.price)}" else dish.category,
                         style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary
+                        color = if (dish.price > 0) PriceColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f)
                     )
+                    if (num <= 0) {
+                        OutlinedButton(
+                            onClick = onAdd,
+                            shape = RoundedCornerShape(14.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                            modifier = Modifier.height(30.dp)
+                        ) {
+                            Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(2.dp))
+                            Text("加入", style = MaterialTheme.typography.bodySmall)
+                        }
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = onDec, modifier = Modifier.size(28.dp)) {
+                                Icon(
+                                    Icons.Filled.Remove,
+                                    contentDescription = "减一份",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            Text(
+                                num.toString(),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.width(18.dp),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                            IconButton(onClick = onAdd, modifier = Modifier.size(28.dp)) {
+                                Icon(
+                                    Icons.Filled.Add,
+                                    contentDescription = "加一份",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

@@ -27,6 +27,7 @@ import com.family.menu.ui.screen.DishEditScreen
 import com.family.menu.ui.screen.HomeScreen
 import com.family.menu.ui.screen.MineScreen
 import com.family.menu.ui.screen.OrderScreen
+import com.family.menu.ui.screen.PosterScreen
 import com.family.menu.ui.screen.SettingsScreen
 import com.family.menu.ui.theme.FamilyMenuTheme
 
@@ -75,11 +76,26 @@ private fun AppRoot() {
             modifier = Modifier.fillMaxSize().padding(padding)
         ) {
             composable(Routes.HOME) {
-                HomeScreen(onOpenDish = { id -> navController.navigate(Routes.dishDetail(id)) })
+                HomeScreen(
+                    onOpenDish = { id -> navController.navigate(Routes.dishDetail(id)) },
+                    onOpenOrder = { navController.navigate(Routes.ORDER) }
+                )
             }
-            composable(Routes.CALENDAR) { CalendarScreen() }
+            composable(Routes.CALENDAR) {
+                CalendarScreen(onOpenDate = { date -> navController.navigate(Routes.calendarDetail(date)) })
+            }
             composable(Routes.MINE) { MineScreen(navController) }
-            composable(Routes.ORDER) { OrderScreen() }
+            composable(Routes.ORDER) {
+                OrderScreen(
+                    onBack = { navController.popBackStack() },
+                    onGoHome = {
+                        navController.navigate(Routes.HOME) {
+                            popUpTo(Routes.HOME) { inclusive = true }
+                        }
+                    },
+                    onGoPoster = { date -> navController.navigate(Routes.poster(date)) }
+                )
+            }
 
             composable(Routes.DISH_EDIT) {
                 DishEditScreen(navController = navController)
@@ -103,8 +119,18 @@ private fun AppRoot() {
                 CategoryScreen(onBack = { navController.popBackStack() })
             }
             composable(Routes.SETTINGS) { SettingsScreen() }
-            composable(Routes.CALENDAR_DETAIL) {
-                CalendarDetailScreen()
+            composable(Routes.CALENDAR_DETAIL) { entry ->
+                val date = entry.arguments?.getString("date") ?: return@composable
+                CalendarDetailScreen(
+                    date = date,
+                    onBack = { navController.popBackStack() },
+                    onOpenDish = { id -> navController.navigate(Routes.dishDetail(id)) },
+                    onGoOrder = { navController.navigate(Routes.ORDER) }
+                )
+            }
+            composable(Routes.POSTER) { entry ->
+                val date = entry.arguments?.getString("date") ?: return@composable
+                PosterScreen(date = date, onBack = { navController.popBackStack() })
             }
         }
     }

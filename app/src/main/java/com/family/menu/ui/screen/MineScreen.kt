@@ -88,9 +88,9 @@ fun MineScreen(navController: NavHostController) {
 
             Text(
                 "使用说明：\n1. 「上传菜品」添加你家的拿手菜，可拍照或选相册图\n" +
-                    "2. 首页按分类浏览并点菜，右下角悬浮球进入今日点单\n" +
-                    "3. 点击菜品卡片看详情，可加入今日点单、编辑或删除\n" +
-                    "4. 日历与海报功能正在开发中",
+                    "2. 首页按分类点菜，点右下角「今日点单」进入点单清单\n" +
+                    "3. 确认点单后可在「日历」查看每天吃了什么，还能一键复用到今天\n" +
+                    "4. 点单完成可一键生成家庭海报，分享到家人群",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 8.dp)

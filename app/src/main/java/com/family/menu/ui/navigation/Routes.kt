@@ -18,4 +18,7 @@ object Routes {
 
     const val CALENDAR_DETAIL = "calendarDetail/{date}"
     fun calendarDetail(date: String) = "calendarDetail/$date"
+
+    const val POSTER = "poster/{date}"
+    fun poster(date: String) = "poster/$date"
 }
