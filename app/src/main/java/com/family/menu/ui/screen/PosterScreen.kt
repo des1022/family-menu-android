@@ -26,6 +26,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -51,6 +52,7 @@ import com.family.menu.ui.components.EmptyState
 import com.family.menu.ui.components.PrimaryButton
 import com.family.menu.ui.components.SecondaryOutlineButton
 import com.family.menu.util.PosterGenerator
+import com.family.menu.util.PosterVariant
 import com.family.menu.util.dateCNFull
 import com.family.menu.viewmodel.PosterViewModel
 import kotlinx.coroutines.Dispatchers
@@ -70,9 +72,10 @@ fun PosterScreen(date: String, onBack: () -> Unit) {
     var poster by remember(date) { mutableStateOf<Bitmap?>(null) }
     var generating by remember(date) { mutableStateOf(true) }
     var busy by remember { mutableStateOf(false) }
+    var variant by remember(date) { mutableStateOf(PosterVariant.WARM) }
 
-    // 标题/文案修改后（防抖 200ms）重新渲染预览
-    LaunchedEffect(vm.title, vm.footer, vm.loaded) {
+    // 标题/文案/模板 修改后（防抖 200ms）重新渲染预览
+    LaunchedEffect(vm.title, vm.footer, vm.loaded, variant) {
         if (!vm.loaded) return@LaunchedEffect
         if (vm.lines.isEmpty()) {
             generating = false
@@ -81,7 +84,7 @@ fun PosterScreen(date: String, onBack: () -> Unit) {
         }
         generating = true
         poster = withContext(Dispatchers.Default) {
-            PosterGenerator.generate(vm.lines, vm.title, vm.footer, dateCNFull(vm.date))
+            PosterGenerator.generate(vm.lines, vm.title, vm.footer, dateCNFull(vm.date), variant)
         }
         generating = false
     }
@@ -158,6 +161,21 @@ fun PosterScreen(date: String, onBack: () -> Unit) {
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            // 模板选择
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                PosterVariant.entries.forEach { v ->
+                    FilterChip(
+                        selected = variant == v,
+                        onClick = { variant = v },
+                        label = { Text(v.label) },
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                }
+            }
 
             if (vm.loaded && vm.lines.isEmpty()) {
                 EmptyState("今天还没有点单\n先去首页点几道菜，再来生成海报")

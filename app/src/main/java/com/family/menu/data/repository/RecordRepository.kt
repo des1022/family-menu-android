@@ -16,6 +16,7 @@ class RecordRepository(private val recordDao: RecordDao) {
     }
     fun observeRecent(limit: Int = 100): Flow<List<RecordEntity>> = recordDao.observeRecent(limit)
     fun observeDishFreq(): Flow<List<DishFreq>> = recordDao.observeDishFreq()
+    suspend fun getAll(): List<RecordEntity> = recordDao.getAll()
 
     suspend fun getById(id: Long): RecordEntity? = recordDao.getById(id)
 

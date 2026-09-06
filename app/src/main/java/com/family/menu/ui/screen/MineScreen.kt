@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Folder
@@ -116,6 +117,13 @@ fun MineScreen(navController: NavHostController) {
                 title = "分类管理",
                 subtitle = "增删分类（热菜/主食/汤品默认已有）",
                 onClick = { navController.navigate(Routes.CATEGORY) }
+            )
+            // 入口：饮食统计
+            EntryRow(
+                icon = { Icon(Icons.Filled.BarChart, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                title = "饮食统计",
+                subtitle = "本周/本月最爱排行、分类占比与建议",
+                onClick = { navController.navigate(Routes.STATS) }
             )
             // 入口：外观
             EntryRow(

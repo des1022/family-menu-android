@@ -12,33 +12,73 @@ import com.family.menu.data.model.OrderLine
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
+/** 海报模板（P2 4-03） */
+enum class PosterVariant(val label: String) {
+    WARM("温馨"),
+    MINIMAL("简约"),
+    FESTIVE("节日"),
+    CUTE("可爱")
+}
+
 /**
- * 家庭菜单分享海报（竖版 ~3:4、1080 宽、暖色家庭风）。
+ * 家庭菜单分享海报（1080 宽、暖色家庭风、竖版高度随菜品数自适应）。
  *
- * 版式：
- *  - 顶部主色横条 + 大标题（可编辑）+ 完整日期
- *  - 金色分隔线下方为 2 列菜品网格（方形缩略图 + 菜名 + 份数徽章）
- *  - 底部金线 + 可编辑文案
- *
- * 高度随菜品数量自适应（基础高度 = 1440 ≈ 1080×4/3）。
- * 菜品图片统一按 320px 方形中心裁切后绘制。
+ * 四套模板（温馨/简约/节日/可爱）通过不同调色板 + 顶部装饰 + 圆角区分：
+ *  - 顶部主色条/装饰 + 大标题（可编辑）+ 完整日期 + 分隔线
+ *  - 2 列菜品网格（方形缩略图 + 菜名 + 份数徽章），无图显示首字占位
+ *  - 底部金线 + 可编辑文案 + 落款
  */
 object PosterGenerator {
 
     private const val W = 1080
-    private val BG = Color.rgb(255, 247, 236)      // 米白
-    private val PRIMARY = Color.rgb(232, 89, 47)   // 暖橙红
-    private val GOLD = Color.rgb(232, 163, 61)
-    private val INK = Color.rgb(74, 43, 24)        // 深棕主文字
-    private val BROWN = Color.rgb(138, 90, 51)     // 次级棕
-    private val CREAM = Color.rgb(243, 227, 210)   // 占位底
+
+    private class Palette(
+        val bg: Int,
+        val primary: Int,
+        val gold: Int,
+        val ink: Int,
+        val brown: Int,
+        val cream: Int,
+        val corner: Float,
+        val bandH: Float
+    )
+
+    private val palettes = mapOf(
+        PosterVariant.WARM to Palette(
+            bg = Color.rgb(255, 247, 236), primary = Color.rgb(232, 89, 47),
+            gold = Color.rgb(232, 163, 61), ink = Color.rgb(74, 43, 24),
+            brown = Color.rgb(138, 90, 51), cream = Color.rgb(243, 227, 210),
+            corner = 26f, bandH = 26f
+        ),
+        PosterVariant.MINIMAL to Palette(
+            bg = Color.rgb(255, 255, 255), primary = Color.rgb(38, 38, 38),
+            gold = Color.rgb(180, 180, 180), ink = Color.rgb(30, 30, 30),
+            brown = Color.rgb(110, 110, 110), cream = Color.rgb(240, 240, 240),
+            corner = 10f, bandH = 8f
+        ),
+        PosterVariant.FESTIVE to Palette(
+            bg = Color.rgb(255, 246, 235), primary = Color.rgb(192, 40, 27),
+            gold = Color.rgb(224, 166, 60), ink = Color.rgb(96, 28, 18),
+            brown = Color.rgb(168, 88, 42), cream = Color.rgb(241, 223, 200),
+            corner = 26f, bandH = 30f
+        ),
+        PosterVariant.CUTE to Palette(
+            bg = Color.rgb(255, 246, 248), primary = Color.rgb(242, 106, 141),
+            gold = Color.rgb(247, 178, 103), ink = Color.rgb(122, 51, 80),
+            brown = Color.rgb(176, 112, 140), cream = Color.rgb(255, 225, 233),
+            corner = 42f, bandH = 24f
+        )
+    )
 
     fun generate(
         lines: List<OrderLine>,
         title: String,
         footer: String,
-        dateFull: String
+        dateFull: String,
+        variant: PosterVariant = PosterVariant.WARM
     ): Bitmap {
+        val p = palettes[variant] ?: palettes.getValue(PosterVariant.WARM)
+
         val shown = lines.take(12)
         val rows = ceil(shown.size / 2.0).toInt().coerceAtLeast(0)
 
@@ -51,29 +91,46 @@ object PosterGenerator {
         val bmp = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bmp)
 
-        // 底
-        canvas.drawColor(BG)
+        canvas.drawColor(p.bg)
 
-        // 顶部主色条
-        canvas.drawRect(0f, 0f, W.toFloat(), 26f, solid(PRIMARY))
+        // 顶部装饰（依模板不同）
+        when (variant) {
+            PosterVariant.FESTIVE -> {
+                // 红 + 金 双条
+                canvas.drawRect(0f, 0f, W.toFloat(), p.bandH * 0.6f, solid(p.primary))
+                canvas.drawRect(0f, p.bandH * 0.6f, W.toFloat(), p.bandH, solid(p.gold))
+            }
+            PosterVariant.CUTE -> {
+                canvas.drawRect(0f, 0f, W.toFloat(), p.bandH, solid(p.primary))
+                // 粉底上的小圆点装饰
+                val dot = solid(p.gold)
+                repeat(4) { i ->
+                    val cx = 130f + i * 220f
+                    canvas.drawCircle(cx, p.bandH + 46f, 12f, dot)
+                }
+            }
+            else -> {
+                canvas.drawRect(0f, 0f, W.toFloat(), p.bandH, solid(p.primary))
+            }
+        }
 
         // 大标题
-        val titlePaint = textPaint(82f, INK, Typeface.create("sans-serif-medium", Typeface.BOLD))
-        canvas.drawText(title, W / 2f, 26f + 118f, center(titlePaint))
+        val titlePaint = textPaint(82f, p.ink, Typeface.create("sans-serif-medium", Typeface.BOLD))
+        canvas.drawText(title, W / 2f, p.bandH + 118f, center(titlePaint))
 
         // 日期
-        val datePaint = textPaint(44f, BROWN, Typeface.create("sans-serif-medium", Typeface.NORMAL))
-        canvas.drawText(dateFull, W / 2f, 26f + 118f + 84f, center(datePaint))
+        val datePaint = textPaint(44f, p.brown, Typeface.create("sans-serif-medium", Typeface.NORMAL))
+        canvas.drawText(dateFull, W / 2f, p.bandH + 118f + 84f, center(datePaint))
 
-        // 金色分隔线
-        val gold = solid(GOLD)
+        // 分隔线
+        val gold = solid(p.gold)
         canvas.drawRoundRect(
-            RectF(W / 2f - 70f, 26f + 280f, W / 2f + 70f, 26f + 280f + 10f), 5f, 5f, gold
+            RectF(W / 2f - 70f, p.bandH + 280f, W / 2f + 70f, p.bandH + 290f), 5f, 5f, gold
         )
 
         // 菜品网格
         if (shown.isEmpty()) {
-            val emptyPaint = textPaint(46f, BROWN, Typeface.DEFAULT)
+            val emptyPaint = textPaint(46f, p.brown, Typeface.DEFAULT)
             canvas.drawText("今天还没有点单", W / 2f, gridStartY + 160f, center(emptyPaint))
         } else {
             shown.forEachIndexed { i, line ->
@@ -81,11 +138,11 @@ object PosterGenerator {
                 val row = i / 2
                 val x = (56 + col * (464 + 40)).toFloat()
                 val y = (gridStartY + row * cellH).toFloat()
-                drawDishCell(canvas, line, x, y)
+                drawDishCell(canvas, line, x, y, p, variant)
             }
             if (lines.size > 12) {
                 val more = lines.size - 12
-                val morePaint = textPaint(36f, BROWN, Typeface.DEFAULT)
+                val morePaint = textPaint(36f, p.brown, Typeface.DEFAULT)
                 canvas.drawText(
                     "…… 还有 $more 道菜，晚餐超丰盛", W / 2f,
                     gridStartY + rows * cellH - 40f, center(morePaint)
@@ -98,50 +155,62 @@ object PosterGenerator {
         canvas.drawRoundRect(
             RectF(W / 2f - 90f, footerY, W / 2f + 90f, footerY + 8f), 4f, 4f, gold
         )
-        val footerPaint = textPaint(50f, INK, Typeface.create("sans-serif-medium", Typeface.NORMAL))
+        val footerPaint = textPaint(50f, p.ink, Typeface.create("sans-serif-medium", Typeface.NORMAL))
         canvas.drawText(footer, W / 2f, footerY + 96f, center(footerPaint))
 
-        val signPaint = textPaint(30f, Color.rgb(190, 152, 110), Typeface.DEFAULT)
-        canvas.drawText("— 家庭菜单 · 一家人就要整整齐齐吃饭 —", W / 2f, H - 80f, center(signPaint))
+        val signPaint = textPaint(30f, p.brown, Typeface.DEFAULT)
+        canvas.drawText(
+            if (variant == PosterVariant.FESTIVE) "— 家宴开席 · 欢聚时刻 —" else "— 家庭菜单 · 一家人就要整整齐齐吃饭 —",
+            W / 2f, H - 80f, center(signPaint)
+        )
 
         return bmp
     }
 
-    private fun drawDishCell(canvas: Canvas, line: OrderLine, x: Float, y: Float) {
+    private fun drawDishCell(canvas: Canvas, line: OrderLine, x: Float, y: Float, p: Palette, variant: PosterVariant) {
         val imgSize = 320f
         val imgX = x + (464 - imgSize) / 2f
 
         val img = decodeSquare(line.dish.imagePath, 320)
         if (img != null) {
             canvas.save()
-            val clip = Path().apply { addRoundRect(RectF(imgX, y, imgX + imgSize, y + imgSize), 26f, 26f, Path.Direction.CW) }
+            val clip = Path().apply {
+                addRoundRect(RectF(imgX, y, imgX + imgSize, y + imgSize), p.corner, p.corner, Path.Direction.CW)
+            }
             canvas.clipPath(clip)
             canvas.drawBitmap(img, null, RectF(imgX, y, imgX + imgSize, y + imgSize), null)
             canvas.restore()
             img.recycle()
         } else {
-            // 无图/解码失败：暖色占位块 + 菜名首字
             canvas.drawRoundRect(
-                RectF(imgX, y, imgX + imgSize, y + imgSize), 26f, 26f, solid(CREAM)
+                RectF(imgX, y, imgX + imgSize, y + imgSize), p.corner, p.corner, solid(p.cream)
             )
             if (line.dish.name.isNotBlank()) {
                 val first = line.dish.name.substring(0, 1)
-                val p = textPaint(120f, Color.rgb(232, 89, 47), Typeface.DEFAULT)
-                val fm = p.fontMetrics
+                val fp = textPaint(120f, p.primary, Typeface.DEFAULT)
+                val fm = fp.fontMetrics
                 val cy = y + imgSize / 2f - (fm.ascent + fm.descent) / 2f
-                canvas.drawText(first, imgX + imgSize / 2f, cy, center(p))
+                canvas.drawText(first, imgX + imgSize / 2f, cy, center(fp))
             }
         }
 
         // 菜名（单行省略）
-        val namePaint = textPaint(44f, INK, Typeface.create("sans-serif-medium", Typeface.NORMAL))
+        val namePaint = textPaint(44f, p.ink, Typeface.create("sans-serif-medium", Typeface.NORMAL))
         drawEllipsizedCenter(canvas, line.dish.name, x, y + imgSize + 26f + 56f, 464f, namePaint)
 
-        // 份数 > 1 时右上角红徽章
+        // 份数 > 1 时右上角徽章
         if (line.num > 1) {
             val cx = imgX + imgSize - 8f - 52f
             val cy = y + 8f + 52f
-            canvas.drawCircle(cx, cy, 52f, solid(PRIMARY))
+            canvas.drawCircle(cx, cy, 52f, solid(p.primary))
+            if (variant == PosterVariant.FESTIVE) {
+                canvas.drawCircle(cx, cy, 52f - 6f, Paint().apply {
+                    style = Paint.Style.STROKE
+                    strokeWidth = 5f
+                    color = p.gold
+                    isAntiAlias = true
+                })
+            }
             val badgePaint = textPaint(48f, Color.WHITE, Typeface.create("sans-serif-medium", Typeface.BOLD))
             val fm = badgePaint.fontMetrics
             val textY = cy - (fm.ascent + fm.descent) / 2f

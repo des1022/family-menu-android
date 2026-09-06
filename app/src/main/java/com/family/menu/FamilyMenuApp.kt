@@ -18,6 +18,7 @@ import com.family.menu.viewmodel.HomeViewModel
 import com.family.menu.viewmodel.MineViewModel
 import com.family.menu.viewmodel.OrderViewModel
 import com.family.menu.viewmodel.SettingsViewModel
+import com.family.menu.viewmodel.StatsViewModel
 
 /**
  * 极简依赖容器：手工装配，不引入 DI 框架。
@@ -54,6 +55,8 @@ class AppContainer(applicationContext: android.content.Context) {
                         CalendarViewModel(recordRepository) as T
                     modelClass.isAssignableFrom(SettingsViewModel::class.java) ->
                         SettingsViewModel(settingsRepository, categoryRepository, dishRepository) as T
+                    modelClass.isAssignableFrom(StatsViewModel::class.java) ->
+                        StatsViewModel(dishRepository, recordRepository) as T
                     modelClass.isAssignableFrom(MineViewModel::class.java) ->
                         MineViewModel(settingsRepository) as T
                     else -> throw IllegalArgumentException("未知 ViewModel：$modelClass")

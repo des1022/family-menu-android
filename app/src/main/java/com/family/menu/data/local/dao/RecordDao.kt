@@ -45,6 +45,9 @@ interface RecordDao {
     @Query("SELECT * FROM records ORDER BY createTime DESC LIMIT :limit")
     fun observeRecent(limit: Int): Flow<List<RecordEntity>>
 
+    @Query("SELECT * FROM records")
+    suspend fun getAll(): List<RecordEntity>
+
     @Query("SELECT * FROM records WHERE id = :id")
     suspend fun getById(id: Long): RecordEntity?
 

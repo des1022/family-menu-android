@@ -33,6 +33,7 @@ import com.family.menu.ui.screen.MineScreen
 import com.family.menu.ui.screen.OrderScreen
 import com.family.menu.ui.screen.PosterScreen
 import com.family.menu.ui.screen.SettingsScreen
+import com.family.menu.ui.screen.StatsScreen
 import com.family.menu.ui.theme.FamilyMenuTheme
 
 private val TAB_ROUTES = setOf(Routes.HOME, Routes.CALENDAR, Routes.MINE)
@@ -132,6 +133,9 @@ private fun AppRoot() {
             }
             composable(Routes.DISH_MANAGE) {
                 DishManageScreen(navController = navController)
+            }
+            composable(Routes.STATS) {
+                StatsScreen(onBack = { navController.popBackStack() })
             }
             composable(Routes.SETTINGS) { SettingsScreen() }
             composable(Routes.CALENDAR_DETAIL) { entry ->
