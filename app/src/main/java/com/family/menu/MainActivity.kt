@@ -10,15 +10,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.family.menu.ui.components.BottomNavBar
-import com.family.menu.ui.components.BottomTab
+import com.family.menu.ui.components.DefaultBottomTabs
 import com.family.menu.ui.navigation.Routes
 import com.family.menu.ui.screen.CalendarDetailScreen
 import com.family.menu.ui.screen.CalendarScreen
@@ -47,9 +46,10 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun AppRoot() {
     val navController = rememberNavController()
+    val context = LocalContext.current
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
-    val showBottomBar = TAB_ROUTES.any { it == currentRoute } || currentRoute == null
+    val showBottomBar = TAB_ROUTES.contains(currentRoute)
 
     Scaffold(
         bottomBar = {
@@ -74,18 +74,35 @@ private fun AppRoot() {
             startDestination = Routes.HOME,
             modifier = Modifier.fillMaxSize().padding(padding)
         ) {
-            composable(Routes.HOME) { HomeScreen() }
+            composable(Routes.HOME) {
+                HomeScreen(onOpenDish = { id -> navController.navigate(Routes.dishDetail(id)) })
+            }
             composable(Routes.CALENDAR) { CalendarScreen() }
-            composable(Routes.MINE) { MineScreen() }
+            composable(Routes.MINE) { MineScreen(navController) }
             composable(Routes.ORDER) { OrderScreen() }
-            composable(Routes.CATEGORY) { CategoryScreen() }
-            composable(Routes.SETTINGS) { SettingsScreen() }
+
             composable(Routes.DISH_EDIT) {
-                DishEditScreen()
+                DishEditScreen(navController = navController)
             }
-            composable(Routes.DISH_DETAIL) { backStackEntry ->
-                DishDetailScreen()
+            composable(Routes.DISH_DETAIL) { entry ->
+                val dishId = entry.arguments?.getString("dishId")?.toLongOrNull() ?: 0L
+                if (dishId > 0L) {
+                    DishDetailScreen(
+                        dishId = dishId,
+                        onEdit = { id -> navController.navigate(Routes.dishEdit(id)) },
+                        onBack = { navController.popBackStack() },
+                        onAdded = {
+                            android.widget.Toast.makeText(
+                                context, "已加入今日点单", android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    )
+                }
             }
+            composable(Routes.CATEGORY) {
+                CategoryScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.SETTINGS) { SettingsScreen() }
             composable(Routes.CALENDAR_DETAIL) {
                 CalendarDetailScreen()
             }

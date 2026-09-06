@@ -7,11 +7,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.family.menu.data.local.DishEntity
 import com.family.menu.data.repository.DishRepository
+import com.family.menu.data.repository.RecordRepository
 import com.family.menu.util.ImageStore
+import com.family.menu.util.todayDateString
 import kotlinx.coroutines.launch
 
 class DishDetailViewModel(
     private val dishRepository: DishRepository,
+    private val recordRepository: RecordRepository,
     private val imageStore: ImageStore
 ) : ViewModel() {
 
@@ -23,6 +26,13 @@ class DishDetailViewModel(
     fun load(id: Long) = viewModelScope.launch {
         dish = dishRepository.getById(id)
         loaded = true
+    }
+
+    /** 加入今日点单（同日同菜自动累加） */
+    fun addToToday(onDone: () -> Unit) = viewModelScope.launch {
+        val d = dish ?: return@launch
+        recordRepository.upsert(todayDateString(), d.id, delta = 1)
+        onDone()
     }
 
     fun toggleStatus() = viewModelScope.launch {

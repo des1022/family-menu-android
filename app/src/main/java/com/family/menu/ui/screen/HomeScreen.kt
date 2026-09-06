@@ -1,6 +1,7 @@
 package com.family.menu.ui.screen
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,7 +50,9 @@ import com.family.menu.util.formatPrice
 import com.family.menu.viewmodel.HomeViewModel
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(
+    onOpenDish: (Long) -> Unit = {}
+) {
     val app = LocalContext.current.applicationContext as FamilyMenuApp
     val vm = viewModel<HomeViewModel>(factory = app.container.viewModelFactory)
     val categories by vm.categories.collectAsStateWithLifecycle()
@@ -141,7 +144,7 @@ fun HomeScreen() {
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(visible, key = { it.id }) { dish ->
-                        DishCard(dish) { vm.addToCart(dish.id) }
+                        DishCard(dish, onClick = { onOpenDish(dish.id) })
                     }
                     item { Spacer(Modifier.height(80.dp)) }
                 }
@@ -151,9 +154,9 @@ fun HomeScreen() {
 }
 
 @Composable
-private fun DishCard(dish: DishEntity, onAdd: () -> Unit) {
+private fun DishCard(dish: DishEntity, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)

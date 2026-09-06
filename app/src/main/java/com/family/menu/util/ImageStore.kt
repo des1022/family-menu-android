@@ -40,6 +40,32 @@ class ImageStore(private val context: Context) {
         file.absolutePath
     }
 
+    /**
+     * 从相册/相机 Uri 读取 → 中心方形裁剪 → 缩放到 MAX_SIDE → 压缩存盘。
+     * 适合方形主图（设计稿菜品卡为方形）。
+     */
+    suspend fun saveSquareFromUri(uri: Uri): String = withContext(Dispatchers.IO) {
+        if (!dir.exists()) dir.mkdirs()
+
+        val decoded = decodeSampledFromUri(uri, MAX_SIDE)
+            ?: throw IllegalArgumentException("无法读取所选图片")
+
+        // 中心方形裁切
+        val side = minOf(decoded.width, decoded.height)
+        val x = (decoded.width - side) / 2
+        val y = (decoded.height - side) / 2
+        val square = Bitmap.createBitmap(decoded, x, y, side, side)
+        if (square != decoded) decoded.recycle()
+
+        val scaled = Bitmap.createScaledBitmap(square, MAX_SIDE, MAX_SIDE, true)
+        if (scaled != square) square.recycle()
+
+        val bytes = compressToLimit(scaled)
+        val file = File(dir, "dish_${System.currentTimeMillis()}_${(0..9999).random()}.jpg")
+        file.writeBytes(bytes)
+        file.absolutePath
+    }
+
     suspend fun delete(path: String) = withContext(Dispatchers.IO) {
         if (path.isBlank()) return@withContext
         runCatching {
@@ -83,6 +109,7 @@ class ImageStore(private val context: Context) {
     companion object {
         private const val DIR_NAME = "dish-images"
         private const val MAX_WIDTH = 1080
+        private const val MAX_SIDE = 800
         private const val MAX_SIZE_BYTES = 200 * 1024
     }
 }

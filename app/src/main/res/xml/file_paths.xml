@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 拍照临时图/分享图：只暴露 cacheDir/ 下白名单目录给系统应用 -->
+<paths>
+    <cache-path
+        name="camera_cache"
+        path="camera/" />
+    <cache-path
+        name="share_cache"
+        path="share/" />
+</paths>

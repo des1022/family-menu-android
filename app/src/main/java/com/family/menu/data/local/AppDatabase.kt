@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [DishEntity::class, CategoryEntity::class, RecordEntity::class],
@@ -20,6 +21,17 @@ abstract class AppDatabase : RoomDatabase() {
             context.applicationContext,
             AppDatabase::class.java,
             "family_menu.db"
-        ).build()
+        ).addCallback(SEED_CALLBACK).build()
+
+        /** 首次建库时写入默认分类（Task 2-01：热菜/主食/汤品） */
+        private val SEED_CALLBACK = object : Callback() {
+            override fun onCreate(db: SupportSQLiteDatabase) {
+                super.onCreate(db)
+                db.execSQL(
+                    "INSERT OR IGNORE INTO categories(name, sort, createTime) VALUES" +
+                        "('热菜', 0, 0), ('主食', 1, 0), ('汤品', 2, 0)"
+                )
+            }
+        }
     }
 }

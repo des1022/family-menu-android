@@ -11,6 +11,7 @@ class DishRepository(private val dishDao: DishDao) {
     suspend fun getById(id: Long): DishEntity? = dishDao.getById(id)
     suspend fun add(dish: DishEntity): Long = dishDao.insert(dish)
     suspend fun update(dish: DishEntity) = dishDao.update(dish)
+    suspend fun update(dish: DishEntity) = dishDao.update(dish)
     suspend fun setStatus(id: Long, status: Int) = dishDao.updateStatus(id, status)
     suspend fun setStatusBatch(ids: List<Long>, status: Int) = dishDao.updateStatusBatch(ids, status)
     suspend fun delete(id: Long) = dishDao.delete(id)
