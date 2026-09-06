@@ -173,6 +173,22 @@ fun DishDetailScreen(
                 }
             }
 
+            // 食材 / 标签
+            if (dish.ingredients.isNotBlank()) {
+                Text(
+                    "🥬 食材：${dish.ingredients}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (dish.tags.isNotBlank()) {
+                Text(
+                    "🏷 标签：${dish.tags.replace(';', ' ').replace(',', ' ')}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
             Spacer(Modifier.height(6.dp))
 
             // 加入点单

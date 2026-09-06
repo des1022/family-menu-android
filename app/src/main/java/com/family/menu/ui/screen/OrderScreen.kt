@@ -1,6 +1,7 @@
 package com.family.menu.ui.screen
 
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,7 +40,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -67,9 +71,11 @@ fun OrderScreen(
     val vm = viewModel<OrderViewModel>(factory = app.container.viewModelFactory)
     val lines by vm.lines.collectAsStateWithLifecycle()
     val context = androidx.compose.ui.platform.LocalContext.current
+    val clipboard = LocalClipboardManager.current
 
     var showClearConfirm by remember { mutableStateOf(false) }
     var showDone by remember { mutableStateOf(false) }
+    var showIngredients by remember { mutableStateOf(false) }
     var remarkTarget by remember { mutableStateOf<OrderLine?>(null) }
     var remarkText by remember { mutableStateOf("") }
 
@@ -102,6 +108,14 @@ fun OrderScreen(
                         }
                     }
                     Spacer(Modifier.height(8.dp))
+                    if (vm.ingredientSummary.isNotEmpty()) {
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            TextButton(onClick = { showIngredients = true }, modifier = Modifier.padding(0.dp)) {
+                                Text("🥬 生成食材清单（${vm.ingredientSummary.size} 种）", color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                        Spacer(Modifier.height(4.dp))
+                    }
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         SecondaryOutlineButton(
                             text = "清空全部",
@@ -153,6 +167,61 @@ fun OrderScreen(
                 }
             }
         }
+    }
+
+    // 食材清单导出
+    if (showIngredients) {
+        val summary = vm.ingredientSummary
+        val clipboardText = buildString {
+            appendLine("📋 今日食材清单（${dateCNWithWeek(vm.date)}）")
+            summary.forEach { (name, times) -> appendLine("· $name   ×$times 份") }
+        }
+        AlertDialog(
+            onDismissRequest = { showIngredients = false },
+            title = { Text("今日食材清单") },
+            text = {
+                Column {
+                    Text(
+                        "按已选菜品汇总（数字为该食材涉及的点单份数）：",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(220.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(10.dp)
+                        ) {
+                            summary.forEach { (name, times) ->
+                                Text(
+                                    "· $name  ×$times 份",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.padding(vertical = 2.dp)
+                                )
+                            }
+                            if (summary.isEmpty()) {
+                                Text("（还没有录了食材的菜）", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showIngredients = false
+                    clipboard.setText(AnnotatedString(clipboardText))
+                    Toast.makeText(context, "清单已复制，可粘贴到备忘录/发给买菜的人", Toast.LENGTH_LONG).show()
+                }) { Text("复制清单") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showIngredients = false }) { Text("关闭") }
+            }
+        )
     }
 
     // 单菜备注编辑

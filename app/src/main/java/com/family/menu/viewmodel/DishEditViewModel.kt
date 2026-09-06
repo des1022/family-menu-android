@@ -15,6 +15,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+/** 标签预设分组（P2 4-02） */
+object TagOptionGroups {
+    val groups: List<Pair<String, List<String>>> = listOf(
+        "辣度" to listOf("不辣", "微辣", "中辣", "特辣"),
+        "难度" to listOf("简单", "中等", "较难"),
+        "时长" to listOf("10分钟内", "15分钟", "半小时", "慢炖"),
+        "菜系" to listOf("家常", "川湘", "粤式", "北方", "汤羹", "甜品")
+    )
+}
+
 class DishEditViewModel(
     private val dishRepository: DishRepository,
     private val categoryRepository: CategoryRepository,
@@ -38,7 +48,13 @@ class DishEditViewModel(
         private set
     var desc by mutableStateOf("")
         private set
+    var ingredients by mutableStateOf("")
+        private set
     var status by mutableStateOf(DishEntity.STATUS_ON)
+        private set
+
+    /** 已选标签集合（保存时以分号拼接进 dish.tags） */
+    var selectedTags by mutableStateOf<Set<String>>(emptySet())
         private set
 
     var loaded by mutableStateOf(false)
@@ -64,6 +80,8 @@ class DishEditViewModel(
             originalImagePath = it.imagePath
             priceText = if (it.price > 0) formatPriceForEdit(it.price) else ""
             desc = it.desc
+            ingredients = it.ingredients
+            selectedTags = com.family.menu.util.parseTags(it.tags)
             status = it.status
         }
         loaded = true
@@ -74,8 +92,18 @@ class DishEditViewModel(
     fun updateImagePath(v: String) { imagePath = v }
     fun updatePriceText(v: String) { priceText = v.filter { it.isDigit() || it == '.' } }
     fun updateDesc(v: String) { desc = v.take(100) }
+    fun updateIngredients(v: String) { ingredients = v.take(80) }
     fun updateStatus(v: Int) { status = v }
     fun clearPickError() { pickError = null }
+
+    fun toggleTag(tag: String) {
+        val s = selectedTags.toMutableSet()
+        if (!s.add(tag)) s.remove(tag)
+        selectedTags = s
+    }
+    fun clearTags() { selectedTags = emptySet() }
+
+    val tagText: String get() = selectedTags.joinToString(";")
 
     /** 从相册/相机 Uri 读取并方形裁切压缩保存 */
     fun onPickImage(uri: android.net.Uri) = viewModelScope.launch {
@@ -100,30 +128,23 @@ class DishEditViewModel(
     fun save(onSaved: () -> Unit) = viewModelScope.launch {
         val price = priceText.toDoubleOrNull() ?: 0.0
         val id = editId
-        if (id == null) {
-            dishRepository.add(
-                DishEntity(
-                    name = name.trim(),
-                    category = category.trim(),
-                    imagePath = imagePath,
-                    price = price,
-                    desc = desc.trim(),
-                    status = status
-                )
+        val common = {
+            DishEntity(
+                name = name.trim(),
+                category = category.trim(),
+                imagePath = imagePath,
+                price = price,
+                desc = desc.trim(),
+                ingredients = ingredients.trim(),
+                tags = tagText,
+                status = status
             )
+        }
+        if (id == null) {
+            dishRepository.add(common())
         } else {
             val changedImage = originalImagePath.isNotBlank() && originalImagePath != imagePath
-            dishRepository.update(
-                DishEntity(
-                    id = id,
-                    name = name.trim(),
-                    category = category.trim(),
-                    imagePath = imagePath,
-                    price = price,
-                    desc = desc.trim(),
-                    status = status
-                )
-            )
+            dishRepository.update(common().copy(id = id))
             if (changedImage) imageStore.delete(originalImagePath)
         }
         onSaved()

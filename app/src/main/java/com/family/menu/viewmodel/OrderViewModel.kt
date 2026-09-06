@@ -38,6 +38,18 @@ class OrderViewModel(
     /** 合计金额（无价格菜品按 0 计） */
     val totalAmount: Double get() = lines.value.sumOf { it.dish.price * it.num }
 
+    /** 今日食材汇总：跨所有已选菜按食材归并，值=涉及该食材的点单总份数（P2 4-01） */
+    val ingredientSummary: List<Pair<String, Int>>
+        get() {
+            val map = LinkedHashMap<String, Int>()
+            lines.value.forEach { line ->
+                com.family.menu.util.parseIngredients(line.dish.ingredients).forEach { ig ->
+                    map[ig] = (map[ig] ?: 0) + line.num
+                }
+            }
+            return map.entries.sortedByDescending { it.value }.map { it.key to it.value }
+        }
+
     fun inc(dishId: Long) = viewModelScope.launch {
         recordRepository.upsert(date, dishId, delta = 1)
     }

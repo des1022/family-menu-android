@@ -85,3 +85,16 @@ fun weekCN(date: String): String {
     val names = arrayOf("周日", "周一", "周二", "周三", "周四", "周五", "周六")
     return names[c.get(Calendar.DAY_OF_WEEK) - 1]
 }
+
+/** 把「西红柿,鸡蛋、葱花；豆腐」这类食材串拆成词条（支持中英文逗号/顿号/分号/空格） */
+fun parseIngredients(raw: String): List<String> =
+    raw.split(Regex("[,，、;；/|\\s]+"))
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+
+/** 把分号分隔的标签串拆成标签集合 */
+fun parseTags(raw: String): Set<String> =
+    raw.split(Regex("[,，;；]+"))
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .toSet()

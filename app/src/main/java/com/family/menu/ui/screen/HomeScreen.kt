@@ -167,6 +167,32 @@ fun HomeScreen(
                 }
             }
 
+            // 标签筛选行
+            if (vm.tagPool.isNotEmpty() || vm.selectedTags.isNotEmpty()) {
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(bottom = 6.dp)
+                ) {
+                    if (vm.selectedTags.isNotEmpty()) {
+                        item(key = "__clear_tags__") {
+                            FilterChip(
+                                selected = false,
+                                onClick = { vm.clearTags() },
+                                label = { Text("标签 ✕ 清除") }
+                            )
+                        }
+                    }
+                    items(vm.tagPool, key = { it }) { tag ->
+                        FilterChip(
+                            selected = tag in vm.selectedTags,
+                            onClick = { vm.toggleTag(tag) },
+                            label = { Text(tag) }
+                        )
+                    }
+                }
+            }
+
             // 内容：空态 / 列表 / 网格
             if (visible.isEmpty()) {
                 Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {

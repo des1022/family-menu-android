@@ -48,10 +48,19 @@ class HomeViewModel(
         private set
     var selectedCategory by mutableStateOf<String?>(null)
         private set
+    var selectedTags by mutableStateOf<Set<String>>(emptySet())
+        private set
     var sortMode by mutableStateOf(SortMode.TIME)
         private set
     var layoutMode by mutableStateOf(LayoutMode.LIST)
         private set
+
+    /** 全部上架菜出现过的标签池（去重排序） */
+    val tagPool: List<String>
+        get() = dishes.value
+            .flatMap { com.family.menu.util.parseTags(it.tags) }
+            .distinct()
+            .sorted()
 
     init {
         viewModelScope.launch {
@@ -60,7 +69,7 @@ class HomeViewModel(
         }
     }
 
-    /** 首页汇总视图：分类/关键字过滤 + 「常吃」分组 + 时间/频次排序。在组合期调用可正确订阅状态。 */
+    /** 首页汇总视图：分类/关键字/标签过滤 + 「常吃」分组 + 时间/频次排序。在组合期调用可正确订阅状态。 */
     fun buildVisible(dishes: List<DishEntity>): List<DishEntity> {
         val kw = keyword.trim()
         val freq = dishFreq.value.associate { it.dishId to it.total }
@@ -68,11 +77,13 @@ class HomeViewModel(
 
         val filtered = dishes.filter { dish ->
             val inKeyword = kw.isBlank() || dish.name.contains(kw, ignoreCase = true)
+            val dishTags = com.family.menu.util.parseTags(dish.tags)
+            val inTags = selectedTags.isEmpty() || dishTags.containsAll(selectedTags)
+            if (!inKeyword || !inTags) return@filter false
             if (isFav) {
-                inKeyword && (dish.favorite == 1 || (freq[dish.id] ?: 0L) > 0L)
+                dish.favorite == 1 || (freq[dish.id] ?: 0L) > 0L
             } else {
-                val inCategory = selectedCategory == null || dish.category == selectedCategory
-                inCategory && inKeyword
+                selectedCategory == null || dish.category == selectedCategory
             }
         }
 
@@ -101,6 +112,13 @@ class HomeViewModel(
 
     fun selectCategory(name: String?) { selectedCategory = name }
     fun updateKeyword(value: String) { keyword = value }
+
+    fun toggleTag(tag: String) {
+        val s = selectedTags.toMutableSet()
+        if (!s.add(tag)) s.remove(tag)
+        selectedTags = s
+    }
+    fun clearTags() { selectedTags = emptySet() }
 
     fun updateSortMode(mode: Int) {
         sortMode = mode

@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -29,6 +31,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -59,6 +62,7 @@ import com.family.menu.ui.components.AppTopBar
 import com.family.menu.ui.components.LoadingIndicator
 import com.family.menu.ui.components.LocalImage
 import com.family.menu.viewmodel.DishEditViewModel
+import com.family.menu.viewmodel.TagOptionGroups
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -227,6 +231,50 @@ fun DishEditScreen(navController: androidx.navigation.NavHostController) {
                 maxLines = 4,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            // —— 食材（用于生成买菜清单）——
+            OutlinedTextField(
+                value = vm.ingredients,
+                onValueChange = vm::updateIngredients,
+                label = { Text("食材清单（选填）") },
+                placeholder = { Text("如：西红柿,鸡蛋,葱  —— 逗号/顿号分隔") },
+                minLines = 1,
+                maxLines = 2,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // —— 标签（多选，便于筛选）——
+            Text(
+                "标签（选填，可选多个）",
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+            if (vm.selectedTags.isNotEmpty()) {
+                Text(
+                    "已选：${vm.selectedTags.joinToString("、")}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+            TagOptionGroups.groups.forEach { (group, options) ->
+                Text(
+                    group,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 6.dp, bottom = 2.dp)
+                )
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    items(options, key = { it }) { option ->
+                        val selected = option in vm.selectedTags
+                        FilterChip(
+                            selected = selected,
+                            onClick = { vm.toggleTag(option) },
+                            label = { Text(option) }
+                        )
+                    }
+                }
+            }
 
             // —— 上架开关 ——
             Row(

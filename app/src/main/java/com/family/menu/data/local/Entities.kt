@@ -21,6 +21,10 @@ data class DishEntity(
     val status: Int = STATUS_ON,
     /** 1 = 手动标记「常吃」（P1 3-01） */
     val favorite: Int = 0,
+    /** 食材清单，顿号/逗号分隔，如「西红柿,鸡蛋,葱花」（P2 4-01） */
+    val ingredients: String = "",
+    /** 多标签，分号分隔，如「微辣;15分钟;家常」（P2 4-02） */
+    val tags: String = "",
     val sortOrder: Long = 0L,
     val createTime: Long = System.currentTimeMillis()
 ) {
