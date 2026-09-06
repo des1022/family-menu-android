@@ -4,7 +4,6 @@ import com.family.menu.data.local.DailySummary
 import com.family.menu.data.local.RecordEntity
 import com.family.menu.data.local.dao.RecordDao
 import kotlinx.coroutines.flow.Flow
-
 class RecordRepository(private val recordDao: RecordDao) {
 
     fun observeByDate(date: String): Flow<List<RecordEntity>> = recordDao.observeByDate(date)
@@ -18,9 +17,29 @@ class RecordRepository(private val recordDao: RecordDao) {
 
     suspend fun getById(id: Long): RecordEntity? = recordDao.getById(id)
 
-    /** Task 2-16：同一日同一菜品累加份数 */
-    suspend fun upsert(date: String, dishId: Long, delta: Int, remark: String? = null) =
-        recordDao.upsert(date, dishId, delta, remark)
+    /** Task 2-16：同一日同一菜品自动合并（份数累加；减到 0 自动删除） */
+    suspend fun upsert(date: String, dishId: Long, delta: Int, remark: String? = null) {
+        val existing = recordDao.findRaw(date, dishId)
+        if (existing == null) {
+            if (delta <= 0) return
+            recordDao.insert(
+                RecordEntity(
+                    date = date,
+                    dishId = dishId,
+                    num = delta,
+                    remark = remark.orEmpty()
+                )
+            )
+        } else {
+            val next = (existing.num + delta).coerceAtLeast(0)
+            if (next <= 0) {
+                recordDao.deleteById(existing.id)
+            } else {
+                recordDao.updateNum(existing.id, next)
+                if (!remark.isNullOrEmpty()) recordDao.updateRemark(existing.id, remark)
+            }
+        }
+    }
 
     suspend fun updateNum(id: Long, num: Int) = recordDao.updateNum(id, num)
     suspend fun updateRemark(id: Long, remark: String) = recordDao.updateRemark(id, remark)
