@@ -56,7 +56,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.family.menu.FamilyMenuApp
 import com.family.menu.data.local.DishEntity
 import com.family.menu.ui.components.AppTopBar
+import com.family.menu.ui.components.LoadingIndicator
 import com.family.menu.ui.components.LocalImage
+import com.family.menu.viewmodel.DishEditViewModel
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -95,16 +97,17 @@ fun DishEditScreen(navController: androidx.navigation.NavHostController) {
     ) { uri: Uri? -> uri?.let { vm.onPickImage(it) } }
 
     // 拍照：输出到 FileProvider Uri
+    var cameraOutput by remember { mutableStateOf<Uri?>(null) }
     val cameraLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture()
     ) { ok: Boolean -> if (ok) cameraOutput?.let { vm.onPickImage(it) } }
-    var cameraOutput by remember { mutableStateOf<Uri?>(null) }
 
     val launchCamera = {
         val dir = File(context.cacheDir, "camera").apply { mkdirs() }
         val file = File(dir, "cam_${System.currentTimeMillis()}.jpg")
-        cameraOutput = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-        cameraLauncher.launch(cameraOutput)
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        cameraOutput = uri
+        cameraLauncher.launch(uri)
     }
 
     if (!vm.loaded) {
