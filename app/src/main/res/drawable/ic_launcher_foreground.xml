@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 房子 + 心 简化标识，呼应 UI 设计图左上角 Logo -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,32 L34,50 L34,76 L46,76 L46,62 L62,62 L62,76 L74,76 L74,50 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,40 C50,36 44,36 44,42 C44,46 50,52 54,56 C58,52 64,46 64,42 C64,36 58,36 54,40 Z" />
+</vector>

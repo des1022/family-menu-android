@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compose 自己接管主题（见 ui/theme/Theme.kt），这里仅给 Activity 一个 splash-like 的兜底 -->
+    <style name="Theme.FamilyMenu" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/bg_warm</item>
+        <item name="android:statusBarColor">@color/bg_warm</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

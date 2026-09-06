@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">家庭菜单</string>
+    <string name="tagline">让家庭吃得更好，生活更有味</string>
+
+    <!-- 底部导航 -->
+    <string name="nav_home">首页</string>
+    <string name="nav_calendar">日历</string>
+    <string name="nav_mine">我的</string>
+
+    <!-- 首页 -->
+    <string name="home_title">今天吃什么？</string>
+    <string name="home_search_hint">搜索菜品</string>
+    <string name="home_category_all">全部</string>
+    <string name="home_empty">还没有菜品\n先到「我的 → 设置 → 分类管理」添加菜品，并保持上架</string>
+    <string name="home_cart_label">点单清单</string>
+
+    <!-- 通用 -->
+    <string name="action_save">保存</string>
+    <string name="action_cancel">取消</string>
+    <string name="action_confirm">确定</string>
+    <string name="action_delete">删除</string>
+    <string name="action_edit">编辑</string>
+</resources>

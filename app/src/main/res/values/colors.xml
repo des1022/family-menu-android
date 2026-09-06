@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 主色：暖橙红（参考 UI 设计图） -->
+    <color name="brand_primary">#D9582B</color>
+    <color name="brand_primary_dark">#B5451F</color>
+    <color name="brand_soft">#FCE3D6</color>
+    <color name="brand_green">#6E8B5A</color>
+
+    <!-- 背景 -->
+    <color name="bg_warm">#F8EFE0</color>
+    <color name="surface_card">#FFFFFF</color>
+    <color name="surface_variant">#EFE4D2</color>
+</resources>
