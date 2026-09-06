@@ -63,7 +63,6 @@ fun CategoryScreen(onBack: () -> Unit) {
     val vm = viewModel<CategoryViewModel>(factory = app.container.viewModelFactory)
     val categories by vm.categories.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
 
     var showAdd by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<CategoryEntity?>(null) }
