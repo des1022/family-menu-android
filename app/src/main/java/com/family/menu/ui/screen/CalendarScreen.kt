@@ -14,8 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ChevronLeft
-import androidx.compose.material.icons.automirrored.filled.ChevronRight
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -67,7 +67,7 @@ fun CalendarScreen(onOpenDate: (String) -> Unit = {}) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { vm.prevMonth() }) {
-                    Icon(Icons.AutoMirrored.Filled.ChevronLeft, contentDescription = "上月")
+                    Icon(Icons.Filled.KeyboardArrowLeft, contentDescription = "上月")
                 }
                 Text(
                     "${vm.year}年${vm.month}月",
@@ -77,7 +77,7 @@ fun CalendarScreen(onOpenDate: (String) -> Unit = {}) {
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
                 IconButton(onClick = { vm.nextMonth() }) {
-                    Icon(Icons.AutoMirrored.Filled.ChevronRight, contentDescription = "下月")
+                    Icon(Icons.Filled.KeyboardArrowRight, contentDescription = "下月")
                 }
             }
 

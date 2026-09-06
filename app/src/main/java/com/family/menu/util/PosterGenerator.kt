@@ -79,8 +79,8 @@ object PosterGenerator {
             shown.forEachIndexed { i, line ->
                 val col = i % 2
                 val row = i / 2
-                val x = 56 + col * (464 + 40)
-                val y = gridStartY + row * cellH
+                val x = (56 + col * (464 + 40)).toFloat()
+                val y = (gridStartY + row * cellH).toFloat()
                 drawDishCell(canvas, line, x, y)
             }
             if (lines.size > 12) {
