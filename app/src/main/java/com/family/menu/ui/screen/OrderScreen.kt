@@ -83,7 +83,7 @@ fun OrderScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { AppTopBar(title = "今日点单 · ${dateCNWithWeek(vm.date)}", onBack = onBack) },
+        topBar = { AppTopBar(title = "今日点单 · ${dateCNWithWeek(vm.currentDate)}", onBack = onBack) },
         bottomBar = {
             if (lines.isNotEmpty()) {
                 Column(
@@ -172,7 +172,7 @@ fun OrderScreen(
     if (showIngredients) {
         val summary = vm.ingredientSummary
         val clipboardText = buildString {
-            appendLine("📋 今日食材清单（${dateCNWithWeek(vm.date)}）")
+            appendLine("📋 今日食材清单（${dateCNWithWeek(vm.currentDate)}）")
             summary.forEach { (name, times) -> appendLine("· $name   ×$times 份") }
         }
         AlertDialog(
@@ -275,7 +275,7 @@ fun OrderScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showDone = false
-                    onGoPoster(vm.date)
+                    onGoPoster(vm.currentDate)
                 }) { Text("生成分享海报") }
             },
             dismissButton = {

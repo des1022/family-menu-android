@@ -15,8 +15,11 @@ import com.family.menu.data.repository.RecordRepository
 import com.family.menu.data.repository.SettingsRepository
 import com.family.menu.data.repository.SortMode
 import com.family.menu.util.todayDateString
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -39,9 +42,12 @@ class HomeViewModel(
     val dishFreq: StateFlow<List<DishFreq>> = recordRepository.observeDishFreq()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val todayDate: String = todayDateString()
+    /** 今日日期（随自然日变化自动切换；跨午夜驻留后首次交互即翻到新一天） */
+    private val dateFlow = MutableStateFlow(todayDateString())
 
-    val todayRecords = recordRepository.observeByDate(todayDate)
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val todayRecords = dateFlow
+        .flatMapLatest { recordRepository.observeByDate(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     var keyword by mutableStateOf("")
@@ -136,11 +142,18 @@ class HomeViewModel(
     }
 
     fun addToCart(dishId: Long) = viewModelScope.launch {
-        recordRepository.upsert(todayDate, dishId, delta = 1)
+        recordRepository.upsert(today(), dishId, delta = 1)
     }
 
     fun decFromCart(dishId: Long) = viewModelScope.launch {
-        recordRepository.upsert(todayDate, dishId, delta = -1)
+        recordRepository.upsert(today(), dishId, delta = -1)
+    }
+
+    /** 取当前日期；若跨了自然日则刷新订阅源（今日记录自动切换到新一天） */
+    private fun today(): String {
+        val d = todayDateString()
+        if (dateFlow.value != d) dateFlow.value = d
+        return d
     }
 
     companion object {

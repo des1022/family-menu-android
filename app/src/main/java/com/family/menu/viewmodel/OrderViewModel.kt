@@ -6,9 +6,12 @@ import com.family.menu.data.model.OrderLine
 import com.family.menu.data.repository.DishRepository
 import com.family.menu.data.repository.RecordRepository
 import com.family.menu.util.todayDateString
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -18,9 +21,19 @@ class OrderViewModel(
     dishRepository: DishRepository
 ) : ViewModel() {
 
-    val date: String = todayDateString()
+    /** 自然日变化自动切换（跨午夜驻留后操作即翻新一天） */
+    private val dateFlow = MutableStateFlow(todayDateString())
 
-    private val records = recordRepository.observeByDate(date)
+    /** 当前日期（写操作时校验并翻页） */
+    val currentDate: String get() {
+        val d = todayDateString()
+        if (dateFlow.value != d) dateFlow.value = d
+        return d
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val records = dateFlow
+        .flatMapLatest { recordRepository.observeByDate(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val dishAll = dishRepository.observeAll()
@@ -51,11 +64,11 @@ class OrderViewModel(
         }
 
     fun inc(dishId: Long) = viewModelScope.launch {
-        recordRepository.upsert(date, dishId, delta = 1)
+        recordRepository.upsert(currentDate, dishId, delta = 1)
     }
 
     fun dec(dishId: Long) = viewModelScope.launch {
-        recordRepository.upsert(date, dishId, delta = -1)
+        recordRepository.upsert(currentDate, dishId, delta = -1)
     }
 
     fun updateRemark(recordId: Long, remark: String) = viewModelScope.launch {
@@ -68,7 +81,7 @@ class OrderViewModel(
 
     /** 确认点单：把今日草稿标记为「已确认」锁定进日历（之后清空/重置不会再删掉它） */
     fun confirm() = viewModelScope.launch {
-        recordRepository.markConfirmed(date)
+        recordRepository.markConfirmed(currentDate)
     }
 
     /**
@@ -77,6 +90,7 @@ class OrderViewModel(
      * - 否则整日清空。结果以文案回调，由界面 Toast 提示。
      */
     fun clearToday(onResult: (String) -> Unit) = viewModelScope.launch {
+        val date = currentDate
         val kept = recordRepository.countConfirmedByDate(date)
         if (kept > 0) {
             recordRepository.deleteUnconfirmedByDate(date)
