@@ -34,6 +34,9 @@ interface DishDao {
     @Query("UPDATE dishes SET category = :to WHERE category = :from")
     suspend fun moveCategory(from: String, to: String): Int
 
+    @Query("UPDATE dishes SET category = :category WHERE id IN (:ids)")
+    suspend fun updateCategoryBatch(ids: List<Long>, category: String): Int
+
     @Query("DELETE FROM dishes WHERE id = :id")
     suspend fun delete(id: Long)
 

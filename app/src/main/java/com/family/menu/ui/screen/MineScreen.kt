@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -77,6 +78,13 @@ fun MineScreen(navController: NavHostController) {
                 title = "上传菜品",
                 subtitle = "拍照或从相册选图，添加新菜",
                 onClick = { navController.navigate(Routes.dishEdit()) }
+            )
+            // 入口：管理菜品
+            EntryRow(
+                icon = { Icon(Icons.Filled.List, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                title = "管理菜品",
+                subtitle = "全部菜品：编辑、上/下架，长按进入批量操作",
+                onClick = { navController.navigate(Routes.DISH_MANAGE) }
             )
             // 入口：分类管理
             EntryRow(

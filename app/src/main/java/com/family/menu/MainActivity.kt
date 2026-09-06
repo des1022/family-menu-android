@@ -24,6 +24,7 @@ import com.family.menu.ui.screen.CalendarScreen
 import com.family.menu.ui.screen.CategoryScreen
 import com.family.menu.ui.screen.DishDetailScreen
 import com.family.menu.ui.screen.DishEditScreen
+import com.family.menu.ui.screen.DishManageScreen
 import com.family.menu.ui.screen.HomeScreen
 import com.family.menu.ui.screen.MineScreen
 import com.family.menu.ui.screen.OrderScreen
@@ -117,6 +118,9 @@ private fun AppRoot() {
             }
             composable(Routes.CATEGORY) {
                 CategoryScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.DISH_MANAGE) {
+                DishManageScreen(navController = navController)
             }
             composable(Routes.SETTINGS) { SettingsScreen() }
             composable(Routes.CALENDAR_DETAIL) { entry ->

@@ -13,6 +13,7 @@ import com.family.menu.viewmodel.CalendarViewModel
 import com.family.menu.viewmodel.CategoryViewModel
 import com.family.menu.viewmodel.DishDetailViewModel
 import com.family.menu.viewmodel.DishEditViewModel
+import com.family.menu.viewmodel.DishManageViewModel
 import com.family.menu.viewmodel.HomeViewModel
 import com.family.menu.viewmodel.MineViewModel
 import com.family.menu.viewmodel.OrderViewModel
@@ -45,6 +46,8 @@ class AppContainer(applicationContext: android.content.Context) {
                         DishEditViewModel(dishRepository, categoryRepository, imageStore) as T
                     modelClass.isAssignableFrom(DishDetailViewModel::class.java) ->
                         DishDetailViewModel(dishRepository, recordRepository, imageStore) as T
+                    modelClass.isAssignableFrom(DishManageViewModel::class.java) ->
+                        DishManageViewModel(dishRepository, categoryRepository, imageStore) as T
                     modelClass.isAssignableFrom(OrderViewModel::class.java) ->
                         OrderViewModel(recordRepository, dishRepository) as T
                     modelClass.isAssignableFrom(CalendarViewModel::class.java) ->

@@ -15,6 +15,7 @@ object Routes {
     const val ORDER = "order"
     const val CATEGORY = "category"
     const val SETTINGS = "settings"
+    const val DISH_MANAGE = "dishManage"
 
     const val CALENDAR_DETAIL = "calendarDetail/{date}"
     fun calendarDetail(date: String) = "calendarDetail/$date"
