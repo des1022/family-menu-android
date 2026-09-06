@@ -42,6 +42,14 @@ class DishDetailViewModel(
         dish = d.copy(status = next)
     }
 
+    /** 手动标记/取消「常吃」（P1 3-01） */
+    fun toggleFavorite() = viewModelScope.launch {
+        val d = dish ?: return@launch
+        val next = if (d.favorite == 1) 0 else 1
+        dishRepository.setFavorite(d.id, next)
+        dish = d.copy(favorite = next)
+    }
+
     fun delete(onDone: () -> Unit) = viewModelScope.launch {
         val d = dish ?: return@launch
         imageStore.delete(d.imagePath)

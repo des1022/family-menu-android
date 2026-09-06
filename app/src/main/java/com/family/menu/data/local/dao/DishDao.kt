@@ -28,6 +28,9 @@ interface DishDao {
     @Query("UPDATE dishes SET status = :status WHERE id = :id")
     suspend fun updateStatus(id: Long, status: Int)
 
+    @Query("UPDATE dishes SET favorite = :favorite WHERE id = :id")
+    suspend fun updateFavorite(id: Long, favorite: Int)
+
     @Query("UPDATE dishes SET status = :status WHERE id IN (:ids)")
     suspend fun updateStatusBatch(ids: List<Long>, status: Int)
 

@@ -60,16 +60,30 @@ class HomeViewModel(
         }
     }
 
-    /** 首页汇总视图：上架菜里做「分类/关键字过滤 + 时间/频次排序」。在组合期调用可正确订阅状态。 */
+    /** 首页汇总视图：分类/关键字过滤 + 「常吃」分组 + 时间/频次排序。在组合期调用可正确订阅状态。 */
     fun buildVisible(dishes: List<DishEntity>): List<DishEntity> {
         val kw = keyword.trim()
+        val freq = dishFreq.value.associate { it.dishId to it.total }
+        val isFav = selectedCategory == CAT_FAV
+
         val filtered = dishes.filter { dish ->
-            val inCategory = selectedCategory == null || dish.category == selectedCategory
             val inKeyword = kw.isBlank() || dish.name.contains(kw, ignoreCase = true)
-            inCategory && inKeyword
+            if (isFav) {
+                inKeyword && (dish.favorite == 1 || (freq[dish.id] ?: 0L) > 0L)
+            } else {
+                val inCategory = selectedCategory == null || dish.category == selectedCategory
+                inCategory && inKeyword
+            }
+        }
+
+        if (isFav) {
+            // 常吃分组：手动标记的常吃最前，其余按累计点单份数降序
+            return filtered.sortedWith(
+                compareByDescending<DishEntity> { if (it.favorite == 1) Long.MAX_VALUE else (freq[it.id] ?: 0L) }
+                    .thenByDescending { it.createTime }
+            )
         }
         if (sortMode != SortMode.FREQUENCY) return filtered
-        val freq = dishFreq.value.associate { it.dishId to it.total }
         return filtered.sortedWith(
             compareByDescending<DishEntity> { freq[it.id] ?: 0L }
                 .thenByDescending { it.createTime }
@@ -109,5 +123,10 @@ class HomeViewModel(
 
     fun decFromCart(dishId: Long) = viewModelScope.launch {
         recordRepository.upsert(todayDate, dishId, delta = -1)
+    }
+
+    companion object {
+        /** 虚拟分类：「常吃」（手动收藏 ∪ 历史点过） */
+        const val CAT_FAV = "__favorite__"
     }
 }

@@ -11,12 +11,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -74,6 +77,14 @@ fun DishDetailScreen(
                 onBack = onBack,
                 actions = {
                     if (dish != null) {
+                        IconButton(onClick = { vm.toggleFavorite() }) {
+                            Icon(
+                                if (dish.favorite == 1) Icons.Filled.Star else Icons.Filled.StarBorder,
+                                contentDescription = "常吃收藏",
+                                tint = if (dish.favorite == 1) androidx.compose.ui.graphics.Color(0xFFE8A33D)
+                                else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                         IconButton(onClick = { showDelete = true }) {
                             Icon(Icons.Filled.Delete, contentDescription = "删除", tint = MaterialTheme.colorScheme.error)
                         }
@@ -117,6 +128,14 @@ fun DishDetailScreen(
                         "已下架",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (dish.favorite == 1) {
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "⭐ 常吃",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = androidx.compose.ui.graphics.Color(0xFFE8A33D)
                     )
                 }
             }

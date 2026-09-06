@@ -48,4 +48,7 @@ class RecordRepository(private val recordDao: RecordDao) {
     suspend fun deleteById(id: Long) = recordDao.deleteById(id)
     suspend fun clearByDate(date: String) = recordDao.deleteByDate(date)
     suspend fun deleteByDateAndDish(date: String, dishId: Long) = recordDao.deleteByDateAndDish(date, dishId)
+    suspend fun deleteUnconfirmedByDate(date: String) = recordDao.deleteUnconfirmedByDate(date)
+    suspend fun markConfirmed(date: String) = recordDao.markConfirmed(date)
+    suspend fun countConfirmedByDate(date: String): Int = recordDao.countConfirmedByDate(date)
 }

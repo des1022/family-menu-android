@@ -67,6 +67,18 @@ interface RecordDao {
     @Query("DELETE FROM records WHERE date = :date")
     suspend fun deleteByDate(date: String)
 
+    /** 清空某日「未确认草稿」（保留已确认的菜单记录） */
+    @Query("DELETE FROM records WHERE date = :date AND confirmed = 0")
+    suspend fun deleteUnconfirmedByDate(date: String)
+
+    /** 确认点单：把某日所有草稿标记为已确认 */
+    @Query("UPDATE records SET confirmed = 1 WHERE date = :date")
+    suspend fun markConfirmed(date: String)
+
+    /** 某日已确认的道数 */
+    @Query("SELECT COUNT(*) FROM records WHERE date = :date AND confirmed = 1")
+    suspend fun countConfirmedByDate(date: String): Int
+
     @Query("DELETE FROM records WHERE date = :date AND dishId = :dishId")
     suspend fun deleteByDateAndDish(date: String, dishId: Long)
 

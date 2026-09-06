@@ -77,7 +77,7 @@ fun HomeScreen(
     val totalNum = todayRecords.sumOf { it.num }
 
     val visible = vm.buildVisible(dishes)
-    val chips = listOf<String?>(null) + categories.map { it.name }
+    val chips = listOf<String?>(null, HomeViewModel.CAT_FAV) + categories.map { it.name }
     val isGrid = vm.layoutMode == LayoutMode.GRID
 
     Scaffold(
@@ -155,7 +155,10 @@ fun HomeScreen(
                 modifier = Modifier.padding(vertical = 6.dp)
             ) {
                 items(chips, key = { it ?: "__all__" }) { cat ->
-                    val label = cat ?: "全部"
+                    val label = when (cat) {
+                        HomeViewModel.CAT_FAV -> "常吃 ⭐"
+                        else -> cat ?: "全部"
+                    }
                     FilterChip(
                         selected = vm.selectedCategory == cat,
                         onClick = { vm.selectCategory(cat) },

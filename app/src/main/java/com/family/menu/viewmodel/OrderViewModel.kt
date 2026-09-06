@@ -54,9 +54,24 @@ class OrderViewModel(
         recordRepository.deleteById(recordId)
     }
 
-    /** 清空当日全部（二次确认在 UI 层） */
-    fun clearToday(onDone: () -> Unit = {}) = viewModelScope.launch {
-        recordRepository.clearByDate(date)
-        onDone()
+    /** 确认点单：把今日草稿标记为「已确认」锁定进日历（之后清空/重置不会再删掉它） */
+    fun confirm() = viewModelScope.launch {
+        recordRepository.markConfirmed(date)
+    }
+
+    /**
+     * 清空今日：
+     * - 若当天已有「已确认」菜单，只清未确认的新选草稿，已确认记录保留；
+     * - 否则整日清空。结果以文案回调，由界面 Toast 提示。
+     */
+    fun clearToday(onResult: (String) -> Unit) = viewModelScope.launch {
+        val kept = recordRepository.countConfirmedByDate(date)
+        if (kept > 0) {
+            recordRepository.deleteUnconfirmedByDate(date)
+            onResult("已保留 $kept 道已确认菜单，本次未确认的新选已清空")
+        } else {
+            recordRepository.clearByDate(date)
+            onResult("已清空今日点单")
+        }
     }
 }

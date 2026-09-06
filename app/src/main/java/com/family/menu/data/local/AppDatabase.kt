@@ -4,12 +4,13 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [DishEntity::class, CategoryEntity::class, RecordEntity::class],
-    version = 1,
-    exportSchema = true
+    version = 2,
+    exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun dishDao(): com.family.menu.data.local.dao.DishDao
@@ -21,7 +22,15 @@ abstract class AppDatabase : RoomDatabase() {
             context.applicationContext,
             AppDatabase::class.java,
             "family_menu.db"
-        ).addCallback(SEED_CALLBACK).build()
+        ).addMigrations(MIGRATION_1_2).addCallback(SEED_CALLBACK).build()
+
+        /** v1 -> v2：菜品加「常吃」标记、点单记录加「已确认」标记（保留旧数据平滑升级） */
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE dishes ADD COLUMN favorite INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE records ADD COLUMN confirmed INTEGER NOT NULL DEFAULT 0")
+            }
+        }
 
         /** 首次建库时写入默认分类（Task 2-01：热菜/主食/汤品） */
         private val SEED_CALLBACK = object : Callback() {

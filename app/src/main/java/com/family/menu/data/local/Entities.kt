@@ -19,6 +19,8 @@ data class DishEntity(
     val price: Double = 0.0,
     /** 1 = 上架，0 = 下架 */
     val status: Int = STATUS_ON,
+    /** 1 = 手动标记「常吃」（P1 3-01） */
+    val favorite: Int = 0,
     val sortOrder: Long = 0L,
     val createTime: Long = System.currentTimeMillis()
 ) {
@@ -61,6 +63,8 @@ data class RecordEntity(
     val dishId: Long,
     val num: Int = 1,
     val remark: String = "",
+    /** 1 = 已确认点单（锁定进日历，清空时保留）；0 = 草稿 */
+    val confirmed: Int = 0,
     val createTime: Long = System.currentTimeMillis()
 )
 

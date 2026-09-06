@@ -110,7 +110,10 @@ fun OrderScreen(
                         )
                         PrimaryButton(
                             text = "确认点单",
-                            onClick = { showDone = true },
+                            onClick = {
+                                vm.confirm()
+                                showDone = true
+                            },
                             modifier = Modifier.weight(1.3f)
                         )
                     }
@@ -179,15 +182,17 @@ fun OrderScreen(
         )
     }
 
-    // 清空今日二次确认
+    // 清空今日二次确认（已确认过的菜单会保留在日历，仅清未确认的新选）
     if (showClearConfirm) {
         ConfirmDialog(
             title = "清空今日点单",
-            message = "将删除今天已选的全部 ${lines.size} 道菜，确定吗？",
+            message = "清空后，今天已「确认点单」的菜单会保留在日历中，仅移除本次未确认的新选。\n确定清空吗？",
             confirmText = "清空",
             onConfirm = {
                 showClearConfirm = false
-                vm.clearToday { Toast.makeText(context, "已清空", Toast.LENGTH_SHORT).show() }
+                vm.clearToday { msg ->
+                    Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                }
             },
             onDismiss = { showClearConfirm = false }
         )

@@ -23,6 +23,7 @@ class SettingsRepository(private val context: Context) {
         val LAST_CATEGORY = stringPreferencesKey("last_category")
         val SORT_MODE = intPreferencesKey("sort_mode")
         val LAYOUT_MODE = intPreferencesKey("layout_mode")
+        val THEME_MODE = intPreferencesKey("theme_mode")
     }
 
     private val safeData = context.menuDataStore.data
@@ -32,6 +33,7 @@ class SettingsRepository(private val context: Context) {
     val lastCategory: Flow<String?> = safeData.map { it[Keys.LAST_CATEGORY] }
     val sortMode: Flow<Int> = safeData.map { it[Keys.SORT_MODE] ?: 0 }
     val layoutMode: Flow<Int> = safeData.map { it[Keys.LAYOUT_MODE] ?: 0 }
+    val themeMode: Flow<Int> = safeData.map { it[Keys.THEME_MODE] ?: ThemeMode.SYSTEM }
 
     suspend fun setNickname(value: String) {
         context.menuDataStore.edit { it[Keys.NICKNAME] = value.trim() }
@@ -51,6 +53,10 @@ class SettingsRepository(private val context: Context) {
         context.menuDataStore.edit { it[Keys.LAYOUT_MODE] = mode }
     }
 
+    suspend fun setThemeMode(mode: Int) {
+        context.menuDataStore.edit { it[Keys.THEME_MODE] = mode }
+    }
+
     /** 清空全部设置（不影响菜品与记录数据） */
     suspend fun clearAll() {
         context.menuDataStore.edit { it.clear() }
@@ -67,4 +73,11 @@ object SortMode {
 object LayoutMode {
     const val LIST = 0
     const val GRID = 1
+}
+
+/** 外观：0 = 跟随系统；1 = 浅色；2 = 深色 */
+object ThemeMode {
+    const val SYSTEM = 0
+    const val LIGHT = 1
+    const val DARK = 2
 }
