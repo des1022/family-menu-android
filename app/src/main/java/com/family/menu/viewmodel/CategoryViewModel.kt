@@ -21,8 +21,10 @@ class CategoryViewModel(
     fun add(name: String): Boolean {
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return false
-        if (categoryRepository.countByName(trimmed) > 0) return false
+        if (trimmed.length > 8) return false
         viewModelScope.launch {
+            // 重名时不新增（suspend 检查只能在协程内做）
+            if (categoryRepository.countByName(trimmed) > 0) return@launch
             val sort = (categories.value.maxOfOrNull { it.sort } ?: -1) + 1
             categoryRepository.add(CategoryEntity(name = trimmed, sort = sort))
         }
