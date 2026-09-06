@@ -56,12 +56,12 @@ class DishEditViewModel(
         loaded = true
     }
 
-    fun setName(v: String) { name = v.take(20) }
-    fun setCategory(v: String) { category = v }
-    fun setImagePath(v: String) { imagePath = v }
-    fun setPriceText(v: String) { priceText = v.filter { it.isDigit() || it == '.' } }
-    fun setDesc(v: String) { desc = v.take(100) }
-    fun setStatus(v: Int) { status = v }
+    fun updateName(v: String) { name = v.take(20) }
+    fun updateCategory(v: String) { category = v }
+    fun updateImagePath(v: String) { imagePath = v }
+    fun updatePriceText(v: String) { priceText = v.filter { it.isDigit() || it == '.' } }
+    fun updateDesc(v: String) { desc = v.take(100) }
+    fun updateStatus(v: Int) { status = v }
     fun clearPickError() { pickError = null }
 
     fun onPickImage(uri: android.net.Uri) = viewModelScope.launch {

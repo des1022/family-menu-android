@@ -55,8 +55,8 @@ class HomeViewModel(
     val todayCount: Int get() = todayRecords.value.size
 
     fun selectCategory(name: String?) { selectedCategory = name }
-    fun setKeyword(value: String) { keyword = value }
-    fun setSortMode(mode: Int) {
+    fun updateKeyword(value: String) { keyword = value }
+    fun updateSortMode(mode: Int) {
         sortMode = mode
         viewModelScope.launch { settingsRepository.setSortMode(mode) }
     }

@@ -101,7 +101,7 @@ fun HomeScreen() {
             // 搜索
             OutlinedTextField(
                 value = vm.keyword,
-                onValueChange = vm::setKeyword,
+                onValueChange = vm::updateKeyword,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
                 placeholder = { Text("搜索菜品", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
