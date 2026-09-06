@@ -40,7 +40,20 @@ class CategoryViewModel(
         categoryRepository.delete(category.id)
     }
 
-    fun reorder(ordered: List<CategoryEntity>) = viewModelScope.launch {
+    /** 上下移动一个位置（dir=-1 上移，+1 下移），实时保存新顺序 */
+    fun move(id: Long, dir: Int) {
+        val list = categories.value
+        val idx = list.indexOfFirst { it.id == id }
+        if (idx < 0) return
+        val target = idx + dir
+        if (target < 0 || target >= list.size) return
+        val ordered = list.toMutableList().apply { add(target, removeAt(idx)) }
+        persistOrder(ordered)
+    }
+
+    fun reorder(ordered: List<CategoryEntity>) = persistOrder(ordered)
+
+    private fun persistOrder(ordered: List<CategoryEntity>) = viewModelScope.launch {
         ordered.forEachIndexed { index, cat ->
             if (cat.sort != index) categoryRepository.updateSort(cat.id, index)
         }

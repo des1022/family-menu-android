@@ -16,6 +16,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Reorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -29,7 +31,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -45,11 +49,13 @@ import com.family.menu.ui.components.AppTopBar
 import com.family.menu.ui.components.ConfirmDialog
 import com.family.menu.ui.components.EmptyState
 import com.family.menu.viewmodel.CategoryViewModel
+import kotlinx.coroutines.launch
 
 /**
- * 分类管理（Task 2-01）：
- * - 长按拖拽排序为 Task 2-02，本版先做增删改；
- * - 删除含菜品的分类时二次确认（移动分类阶段二补）。
+ * 分类管理（Task 2-01 / 2-02）：
+ * - 默认分类已内置（热菜/主食/汤品），支持增/改/删；
+ * - 行尾 ↑↓ 调整顺序（实时保存，首页 Tab 同步按 sort 排序）；
+ * - 删除含菜品的分类时可选「把菜品移到其他分类」或「一并删除」。
  */
 @Composable
 fun CategoryScreen(onBack: () -> Unit) {
@@ -57,11 +63,26 @@ fun CategoryScreen(onBack: () -> Unit) {
     val vm = viewModel<CategoryViewModel>(factory = app.container.viewModelFactory)
     val categories by vm.categories.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     var showAdd by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<CategoryEntity?>(null) }
-    var deleting by remember { mutableStateOf<CategoryEntity?>(null) }
     var input by remember { mutableStateOf("") }
+
+    // 删除流程：先查该分类下是否有菜
+    var deleting by remember { mutableStateOf<CategoryEntity?>(null) }
+    var deleteCount by remember { mutableIntStateOf(-1) }
+    var movingTo by remember { mutableStateOf<CategoryEntity?>(null) }
+
+    LaunchedEffect(deleting) {
+        val cat = deleting ?: return@LaunchedEffect
+        deleteCount = -1
+        deleteCount = app.container.dishRepository.countByCategory(cat.name)
+    }
+
+    val others = remember(categories, deleting) {
+        categories.filter { it.id != deleting?.id }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -76,49 +97,42 @@ fun CategoryScreen(onBack: () -> Unit) {
         }
     ) { padding ->
         if (categories.isEmpty()) {
-            EmptyState("还没有分类，点右下角 ＋ 新增")
+            Column(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                EmptyState("还没有分类，点右下角 ＋ 新增")
+            }
             return@Scaffold
         }
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 88.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(categories, key = { it.id }) { cat ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Filled.Reorder,
-                            contentDescription = "排序（拖拽排序后续版本支持）",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(Modifier.width(10.dp))
-                        Text(
-                            cat.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.weight(1f)
-                        )
-                        IconButton(onClick = {
-                            input = cat.name
-                            editing = cat
-                        }) {
-                            Icon(Icons.Filled.Edit, contentDescription = "重命名", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        IconButton(onClick = { deleting = cat }) {
-                            Icon(Icons.Filled.Delete, contentDescription = "删除", tint = MaterialTheme.colorScheme.error)
-                        }
-                    }
-                }
+            item {
+                Text(
+                    "提示：点行尾 ↑↓ 调整分类顺序（首页分类 Tab 会同步）",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                )
             }
-            item { Spacer(Modifier.height(72.dp)) }
+            items(categories, key = { it.id }) { cat ->
+                val index = categories.indexOfFirst { c -> c.id == cat.id }
+                CategoryRow(
+                    cat = cat,
+                    index = index,
+                    total = categories.size,
+                    onRename = {
+                        input = cat.name
+                        editing = cat
+                    },
+                    onMoveUp = { vm.move(cat.id, -1) },
+                    onMoveDown = { vm.move(cat.id, 1) },
+                    onDelete = { deleting = cat }
+                )
+            }
         }
     }
 
@@ -138,7 +152,7 @@ fun CategoryScreen(onBack: () -> Unit) {
             confirmButton = {
                 TextButton(onClick = {
                     showAdd = false
-                    vm.add(input) // 内部有 8 字与空名校验
+                    vm.add(input)
                 }) { Text("新增") }
             },
             dismissButton = { TextButton(onClick = { showAdd = false }) { Text("取消") } }
@@ -168,17 +182,135 @@ fun CategoryScreen(onBack: () -> Unit) {
         )
     }
 
-    // 删除（含菜品的分类直接提示一并删除）
+    // 删除分类
     deleting?.let { cat ->
-        ConfirmDialog(
-            title = "删除分类",
-            message = "确定删除分类「${cat.name}」？\n该分类下的菜品也会一并删除，此操作不可恢复。",
-            confirmText = "删除",
-            onConfirm = {
-                deleting = null
-                vm.delete(cat, moveTo = null)
+        when {
+            deleteCount < 0 -> Unit // 查询中
+            deleteCount == 0 -> ConfirmDialog(
+                title = "删除分类",
+                message = "确定删除分类「${cat.name}」吗？",
+                confirmText = "删除",
+                onConfirm = {
+                    deleting = null
+                    vm.delete(cat, moveTo = null)
+                },
+                onDismiss = { deleting = null }
+            )
+            else -> AlertDialog(
+                onDismissRequest = { deleting = null },
+                title = { Text("「${cat.name}」下有 $deleteCount 道菜") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            "删除前可以先把它下面的菜移到其他分类：",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (others.isEmpty()) {
+                            Text("（没有其他分类可选）", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        deleting = null
+                        vm.delete(cat, moveTo = null)
+                    }) { Text("连菜一并删除", color = MaterialTheme.colorScheme.error) }
+                },
+                dismissButton = {
+                    Row {
+                        TextButton(onClick = { deleting = null }) { Text("取消") }
+                        if (others.isNotEmpty()) {
+                            TextButton(onClick = {
+                                deleting = null
+                                movingTo = cat
+                            }) { Text("选择移动分类") }
+                        }
+                    }
+                }
+            )
+        }
+    }
+
+    // 选择「移动到哪个分类」
+    movingTo?.let { cat ->
+        AlertDialog(
+            onDismissRequest = { movingTo = null },
+            title = { Text("把菜品移到哪个分类？") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    others.forEach { target ->
+                        TextButton(
+                            onClick = {
+                                movingTo = null
+                                vm.delete(cat, moveTo = target.name)
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text("移动到「${target.name}」") }
+                    }
+                }
             },
-            onDismiss = { deleting = null }
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { movingTo = null }) { Text("取消") }
+            }
         )
+    }
+}
+
+@Composable
+private fun CategoryRow(
+    cat: CategoryEntity,
+    index: Int,
+    total: Int,
+    onRename: () -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(start = 14.dp, end = 4.dp, top = 2.dp, bottom = 2.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Filled.Reorder,
+                contentDescription = "拖动排序",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(
+                cat.name,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
+            )
+            // 上移/下移
+            IconButton(onClick = onMoveUp, enabled = index > 0, modifier = Modifier.size(34.dp)) {
+                Icon(
+                    Icons.Filled.KeyboardArrowUp,
+                    contentDescription = "上移",
+                    tint = if (index > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+                )
+            }
+            IconButton(onClick = onMoveDown, enabled = index < total - 1, modifier = Modifier.size(34.dp)) {
+                Icon(
+                    Icons.Filled.KeyboardArrowDown,
+                    contentDescription = "下移",
+                    tint = if (index < total - 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+                )
+            }
+            IconButton(onClick = onRename, modifier = Modifier.size(34.dp)) {
+                Icon(Icons.Filled.Edit, contentDescription = "重命名", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+            }
+            IconButton(onClick = onDelete, modifier = Modifier.size(34.dp)) {
+                Icon(Icons.Filled.Delete, contentDescription = "删除", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+            }
+        }
     }
 }

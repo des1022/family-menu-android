@@ -22,6 +22,7 @@ class SettingsRepository(private val context: Context) {
         val NICKNAME = stringPreferencesKey("nickname")
         val LAST_CATEGORY = stringPreferencesKey("last_category")
         val SORT_MODE = intPreferencesKey("sort_mode")
+        val LAYOUT_MODE = intPreferencesKey("layout_mode")
     }
 
     private val safeData = context.menuDataStore.data
@@ -30,6 +31,7 @@ class SettingsRepository(private val context: Context) {
     val nickname: Flow<String> = safeData.map { it[Keys.NICKNAME].orEmpty() }
     val lastCategory: Flow<String?> = safeData.map { it[Keys.LAST_CATEGORY] }
     val sortMode: Flow<Int> = safeData.map { it[Keys.SORT_MODE] ?: 0 }
+    val layoutMode: Flow<Int> = safeData.map { it[Keys.LAYOUT_MODE] ?: 0 }
 
     suspend fun setNickname(value: String) {
         context.menuDataStore.edit { it[Keys.NICKNAME] = value.trim() }
@@ -45,6 +47,10 @@ class SettingsRepository(private val context: Context) {
         context.menuDataStore.edit { it[Keys.SORT_MODE] = mode }
     }
 
+    suspend fun setLayoutMode(mode: Int) {
+        context.menuDataStore.edit { it[Keys.LAYOUT_MODE] = mode }
+    }
+
     /** 清空全部设置（不影响菜品与记录数据） */
     suspend fun clearAll() {
         context.menuDataStore.edit { it.clear() }
@@ -55,4 +61,10 @@ class SettingsRepository(private val context: Context) {
 object SortMode {
     const val TIME = 0
     const val FREQUENCY = 1
+}
+
+/** 首页布局：0 = 列表；1 = 两列网格 */
+object LayoutMode {
+    const val LIST = 0
+    const val GRID = 1
 }

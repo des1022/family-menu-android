@@ -17,4 +17,5 @@ class DishRepository(private val dishDao: DishDao) {
     suspend fun deleteBatch(ids: List<Long>) = dishDao.deleteBatch(ids)
     suspend fun moveCategory(from: String, to: String): Int = dishDao.moveCategory(from, to)
     suspend fun countOnSale(): Int = dishDao.countOnSale()
+    suspend fun countByCategory(category: String): Int = dishDao.countByCategory(category)
 }

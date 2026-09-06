@@ -7,13 +7,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.family.menu.data.local.CategoryEntity
 import com.family.menu.data.local.DishEntity
+import com.family.menu.data.local.DishFreq
 import com.family.menu.data.repository.CategoryRepository
 import com.family.menu.data.repository.DishRepository
+import com.family.menu.data.repository.LayoutMode
 import com.family.menu.data.repository.RecordRepository
 import com.family.menu.data.repository.SettingsRepository
+import com.family.menu.data.repository.SortMode
 import com.family.menu.util.todayDateString
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -27,7 +31,12 @@ class HomeViewModel(
     val categories: StateFlow<List<CategoryEntity>> = categoryRepository.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    /** 仅上架菜（首页展示） */
     val dishes: StateFlow<List<DishEntity>> = dishRepository.observeOnSale()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** 每道菜累计点单份数 */
+    val dishFreq: StateFlow<List<DishFreq>> = recordRepository.observeDishFreq()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val todayDate: String = todayDateString()
@@ -39,20 +48,34 @@ class HomeViewModel(
         private set
     var selectedCategory by mutableStateOf<String?>(null)
         private set
-    var sortMode by mutableStateOf(0)
+    var sortMode by mutableStateOf(SortMode.TIME)
+        private set
+    var layoutMode by mutableStateOf(LayoutMode.LIST)
         private set
 
-    val visibleDishes: List<DishEntity>
-        get() {
-            val kw = keyword.trim()
-            return dishes.value.filter { dish ->
-                val inCategory = selectedCategory == null || dish.category == selectedCategory
-                val inKeyword = kw.isBlank() || dish.name.contains(kw, ignoreCase = true)
-                inCategory && inKeyword
-            }
+    init {
+        viewModelScope.launch {
+            sortMode = settingsRepository.sortMode.first()
+            layoutMode = settingsRepository.layoutMode.first()
         }
+    }
 
-    /** 今日已选道数（按 dishId distinct） */
+    /** 首页汇总视图：上架菜里做「分类/关键字过滤 + 时间/频次排序」。在组合期调用可正确订阅状态。 */
+    fun buildVisible(dishes: List<DishEntity>): List<DishEntity> {
+        val kw = keyword.trim()
+        val filtered = dishes.filter { dish ->
+            val inCategory = selectedCategory == null || dish.category == selectedCategory
+            val inKeyword = kw.isBlank() || dish.name.contains(kw, ignoreCase = true)
+            inCategory && inKeyword
+        }
+        if (sortMode != SortMode.FREQUENCY) return filtered
+        val freq = dishFreq.value.associate { it.dishId to it.total }
+        return filtered.sortedWith(
+            compareByDescending<DishEntity> { freq[it.id] ?: 0L }
+                .thenByDescending { it.createTime }
+        )
+    }
+
     val todayCount: Int get() = todayRecords.value.size
 
     /** 今日总份数（悬浮球显示用） */
@@ -64,9 +87,20 @@ class HomeViewModel(
 
     fun selectCategory(name: String?) { selectedCategory = name }
     fun updateKeyword(value: String) { keyword = value }
+
     fun updateSortMode(mode: Int) {
         sortMode = mode
         viewModelScope.launch { settingsRepository.setSortMode(mode) }
+    }
+
+    fun toggleSortMode() {
+        updateSortMode(if (sortMode == SortMode.TIME) SortMode.FREQUENCY else SortMode.TIME)
+    }
+
+    fun toggleLayoutMode() {
+        val next = if (layoutMode == LayoutMode.LIST) LayoutMode.GRID else LayoutMode.LIST
+        layoutMode = next
+        viewModelScope.launch { settingsRepository.setLayoutMode(next) }
     }
 
     fun addToCart(dishId: Long) = viewModelScope.launch {

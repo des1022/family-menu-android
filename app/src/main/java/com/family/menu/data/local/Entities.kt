@@ -70,3 +70,9 @@ data class DailySummary(
     val dishCount: Int,
     val totalNum: Int
 )
+
+/** 菜品累计点单份数（频次排序「常点」用） */
+data class DishFreq(
+    val dishId: Long,
+    val total: Long
+)

@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import com.family.menu.data.local.DailySummary
+import com.family.menu.data.local.DishFreq
 import com.family.menu.data.local.RecordEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -68,4 +69,8 @@ interface RecordDao {
 
     @Query("DELETE FROM records WHERE date = :date AND dishId = :dishId")
     suspend fun deleteByDateAndDish(date: String, dishId: Long)
+
+    /** 每道菜累计点单份数（含历史全部日期），供「常点」排序 */
+    @Query("SELECT dishId AS dishId, SUM(num) AS total FROM records GROUP BY dishId")
+    fun observeDishFreq(): Flow<List<DishFreq>>
 }

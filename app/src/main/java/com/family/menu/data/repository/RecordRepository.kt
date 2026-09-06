@@ -1,6 +1,7 @@
 package com.family.menu.data.repository
 
 import com.family.menu.data.local.DailySummary
+import com.family.menu.data.local.DishFreq
 import com.family.menu.data.local.RecordEntity
 import com.family.menu.data.local.dao.RecordDao
 import kotlinx.coroutines.flow.Flow
@@ -14,6 +15,7 @@ class RecordRepository(private val recordDao: RecordDao) {
         return recordDao.observeMonthSummaries("$year-$mm")
     }
     fun observeRecent(limit: Int = 100): Flow<List<RecordEntity>> = recordDao.observeRecent(limit)
+    fun observeDishFreq(): Flow<List<DishFreq>> = recordDao.observeDishFreq()
 
     suspend fun getById(id: Long): RecordEntity? = recordDao.getById(id)
 

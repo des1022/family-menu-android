@@ -45,4 +45,7 @@ interface DishDao {
 
     @Query("SELECT COUNT(*) FROM dishes WHERE status = 1")
     suspend fun countOnSale(): Int
+
+    @Query("SELECT COUNT(*) FROM dishes WHERE category = :category")
+    suspend fun countByCategory(category: String): Int
 }
