@@ -111,7 +111,7 @@ fun OrderScreen(
                         PrimaryButton(
                             text = "确认点单",
                             onClick = { showDone = true },
-                            modifier = Modifier.weight(1f.3f)
+                            modifier = Modifier.weight(1.3f)
                         )
                     }
                 }
